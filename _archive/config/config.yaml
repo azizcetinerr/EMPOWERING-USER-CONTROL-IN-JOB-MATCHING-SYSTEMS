@@ -1,0 +1,118 @@
+# TÜBİTAK Proje - Adil İş Eşleştirme Sistemi Konfigürasyon Dosyası
+
+# Veri Kaynakları
+data_sources:
+  youth_portal:
+    list_url: "https://youth.europa.eu/go-abroad/volunteering/opportunities_en"
+    base_url: "https://youth.europa.eu"
+    output_file: "proje_linkleri.txt"
+  
+  europass_cv:
+    # CV URL'i environment variable'dan alınacak veya buraya yazılacak
+    # Örnek: "https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/aziz+muammer-%C3%A7etiner/7166a565-f20c-4c5c-83a4-00a4db71fd09?view=html"
+    url: "https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/aziz+muammer-%C3%A7etiner/7166a565-f20c-4c5c-83a4-00a4db71fd09?view=html"
+    output_files:
+      ham_beceriler: "IP1_Ciktisi_Aday_Ham_Beceriler.pkl"
+      tam_metin: "IP1_Ciktisi_Aday_Tam_Metin.txt"
+  
+  motivation_letter:
+    # Örnek motivasyon mektubu (gerçek kullanımda dosyadan okunacak)
+    text: |
+      I would like to do activities and things that makes me more self-confident. I like to travel too. 
+      I wanted to connect these two things together thats why I decided to become Global Volunteer of AIESEC. 
+      I was working at school with kids on project Global Classroom in Iasi Romania. 
+      I lived there for 2 months with people from all over the world.
+
+# Model Ayarları
+models:
+  skill_extraction:
+    spacy_model: "en_core_web_lg"
+    skill_db_file: "skill_db_relax_20.json"
+  
+  embedding:
+    model_name: "xlm-roberta-base"
+    device: "auto"  # "auto", "cpu", "cuda", "mps"
+    batch_size: 32
+  
+  ai_detection:
+    model_name: "roberta-base-openai-detector"
+  
+  nli:
+    model_name: "cross-encoder/nli-distilroberta-base"
+    device: "auto"
+
+# Skorlama Ağırlıkları
+scoring_weights:
+  matching_score: 0.5      # M-Skoru ağırlığı
+  sincerity_score: 0.3      # S-Skoru ağırlığı
+  reliability_score: 0.2   # R-Skoru ağırlığı
+
+# Samimiyet Skoru Ayarları
+sincerity_scoring:
+  human_score_weight: 0.4
+  context_score_weight: 0.6
+  top_n_projects: 20  # S-Skoru hesaplanacak ilk N proje
+
+# Adillik (Fairness) Ayarları
+fairness:
+  enabled: true
+  bonus_keywords: ["culture", "art", "heritage", "diversity"]
+  bonus_score: 5.0
+
+# Veri İşleme Ayarları
+data_processing:
+  remove_duplicates: true
+  min_skill_length: 2  # Minimum beceri uzunluğu (karakter)
+  skill_stopwords: ["com", "lo", "e", "m", "km"]  # Filtrelenecek beceriler
+  clean_empty_descriptions: true
+
+# Web Scraping Ayarları
+scraping:
+  selenium:
+    headless: true
+    wait_timeout: 15
+    page_load_timeout: 30
+    implicit_wait: 10
+  
+  requests:
+    retry_count: 3
+    retry_delay: 10  # saniye (429 hatası için)
+    request_delay: 1  # Her istek arası bekleme (saniye)
+    timeout: 30
+
+# Çıktı Dosyaları
+output:
+  base_dir: "outputs"
+  raw_data_dir: "outputs/raw"
+  processed_data_dir: "outputs/processed"
+  results_dir: "outputs/results"
+  
+  files:
+    project_links: "proje_linkleri.txt"
+    project_details: "youth_portal_projeler_detayli.csv"
+    candidate_skills_raw: "IP1_Ciktisi_Aday_Ham_Beceriler.pkl"
+    candidate_skills_extracted: "IP1_Ciktisi_Aday_Cikarilan_Beceriler.pkl"
+    candidate_vectors: "IP1_Ciktisi_Aday_Vektorleri.npy"
+    projects_with_skills: "IP1_Ciktisi_Projeler_Becerili.pkl"
+    projects_with_vectors: "IP1_Ciktisi_Projeler_Vektorlu.pkl"
+    matching_scores: "IP2_Ciktisi_M_Skorlu_Projeler.pkl"
+    sincerity_scores: "IP3_Ciktisi_S_Skorlu_Projeler.pkl"
+    reliability_details: "IP4_Ciktisi_R_Detaylari.pkl"
+    reliability_score: "IP4_Ciktisi_R_Skoru.txt"
+    final_ranking: "IP5_Nihai_Adil_Siralama.csv"
+    visualization: "IP6_Sonuc_Grafigi.png"
+    system_diagram: "Sistem_Akis_Semasi.png"
+
+# Logging Ayarları
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/proje.log"
+  console: true
+
+# Performans Ayarları
+performance:
+  use_multiprocessing: true
+  num_workers: 4
+  chunk_size: 50  # Batch işleme için
+

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TÜBİTAK Proje - CV Eşleştirme Sistemi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .help-text {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .progress-container.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .progress-message {
+            text-align: center;
+            color: #666;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .progress-time {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            display: none;
+            padding: 15px;
+            background: #fee;
+            border: 2px solid #fcc;
+            border-radius: 10px;
+            color: #c33;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .error-message.active {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-message {
+            display: none;
+            padding: 15px;
+            background: #efe;
+            border: 2px solid #cfc;
+            border-radius: 10px;
+            color: #3c3;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .example-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .example-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 CV Eşleştirme Sistemi</h1>
+        <p class="subtitle">Europass CV linkinizi girin, size en uygun projeleri bulalım</p>
+
+        <form id="cvForm">
+            <div class="form-group">
+                <label for="cvUrl">Europass CV Linki</label>
+                <input 
+                    type="url" 
+                    id="cvUrl" 
+                    name="cvUrl" 
+                    placeholder="https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/..."
+                    required
+                >
+                <div class="help-text">
+                    Europass CV'nizin paylaşım linkini buraya yapıştırın.
+                    <br>
+                    <a href="#" class="example-link" onclick="fillExample(); return false;">Örnek link formatı</a>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Analiz Et
+            </button>
+        </form>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div class="progress-message" id="progressMessage">Hazırlanıyor...</div>
+            <div class="progress-time" id="progressTime">Geçen süre: 0 saniye</div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('cvForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressMessage = document.getElementById('progressMessage');
+        const progressTime = document.getElementById('progressTime');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        let sessionId = null;
+        let statusInterval = null;
+        let timeInterval = null;
+        let startTime = null;
+        const MAX_WAIT_TIME = 60 * 60 * 1000; // 60 dakika (milisaniye) - Model yükleme ve büyük veri setleri için artırıldı
+
+        function fillExample() {
+            document.getElementById('cvUrl').value = 'https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/example/12345678-1234-1234-1234-123456789012?view=html';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            successMessage.classList.remove('active');
+            setTimeout(() => {
+                errorMessage.classList.remove('active');
+            }, 10000); // 10 saniye göster
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('active');
+            errorMessage.classList.remove('active');
+        }
+
+        function updateProgress(progress, message) {
+            progressFill.style.width = progress + '%';
+            progressFill.textContent = progress + '%';
+            progressMessage.textContent = message;
+            updateElapsedTime();
+        }
+
+        function updateElapsedTime() {
+            if (!startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000); // saniye cinsinden
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            let timeText = '';
+            if (minutes > 0) {
+                timeText = `Geçen süre: ${minutes} dakika ${seconds} saniye`;
+            } else {
+                timeText = `Geçen süre: ${seconds} saniye`;
+            }
+            
+            progressTime.textContent = timeText;
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function showNotification(title, message) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: message,
+                    icon: '/static/favicon.ico', // İsterseniz icon ekleyebilirsiniz
+                    badge: '/static/favicon.ico',
+                    tag: 'cv-analysis',
+                    requireInteraction: false
+                });
+            }
+        }
+
+        function checkStatus() {
+            if (!sessionId) return;
+
+            // Timeout kontrolü
+            if (startTime && (Date.now() - startTime) > MAX_WAIT_TIME) {
+                if (statusInterval) {
+                    clearInterval(statusInterval);
+                    statusInterval = null;
+                }
+                if (timeInterval) {
+                    clearInterval(timeInterval);
+                    timeInterval = null;
+                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Analiz Et';
+                showError('Analiz çok uzun sürdü (60 dakika). Lütfen sayfayı yenileyip tekrar deneyin veya sistem yöneticisine başvurun.');
+                progressContainer.classList.remove('active');
+                return;
+            }
+
+            fetch(`/status/${sessionId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateProgress(data.progress, data.message);
+
+                    if (data.status === 'completed') {
+                        // Interval'leri temizle ve null yap (tekrar başlamasın)
+                        if (statusInterval) {
+                            clearInterval(statusInterval);
+                            statusInterval = null;
+                        }
+                        if (timeInterval) {
+                            clearInterval(timeInterval);
+                            timeInterval = null;
+                        }
+                        
+                        // Final zamanı göster
+                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        const timeText = minutes > 0 
+                            ? `${minutes} dakika ${seconds} saniye` 
+                            : `${seconds} saniye`;
+                        
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Analiz Et';
+                        showSuccess(`Analiz tamamlandı! (${timeText}) Sonuçlar yükleniyor...`);
+                        
+                        // Bildirim gönder
+                        showNotification(
+                            'CV Analizi Tamamlandı! 🎉',
+                            `Analiz ${timeText} sürede tamamlandı. Sonuçları görmek için tıklayın.`
+                        );
+                        
+                        setTimeout(() => {
+                            window.location.href = `/results/${sessionId}`;
+                        }, 1500);
+                    } else if (data.status === 'error') {
+                        // Interval'leri temizle ve null yap (tekrar başlamasın)
+                        if (statusInterval) {
+                            clearInterval(statusInterval);
+                            statusInterval = null;
+                        }
+                        if (timeInterval) {
+                            clearInterval(timeInterval);
+                            timeInterval = null;
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Analiz Et';
+                        showError(data.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                        progressContainer.classList.remove('active');
+                        
+                        // Hata bildirimi
+                        showNotification(
+                            'CV Analizi Hatası ❌',
+                            data.message || 'Bir hata oluştu. Lütfen tekrar deneyin.'
+                        );
+                    }
+                    // Eğer status hala 'processing' veya 'queued' ise devam et
+                })
+                .catch(error => {
+                    console.error('Status check error:', error);
+                    // Hata durumunda da devam et, belki geçici bir sorundur
+                    // Ama çok fazla hata olursa durdur
+                });
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cvUrl = document.getElementById('cvUrl').value.trim();
+            
+            if (!cvUrl) {
+                showError('Lütfen bir CV linki girin');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Gönderiliyor...';
+            errorMessage.classList.remove('active');
+            successMessage.classList.remove('active');
+            progressContainer.classList.add('active');
+            updateProgress(0, 'İstek gönderiliyor...');
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ cv_url: cvUrl })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    sessionId = data.session_id;
+                    startTime = Date.now(); // Başlangıç zamanını kaydet
+                    showSuccess('CV analizi başlatıldı! Arka planda çalışıyor...');
+                    
+                    // Bildirim izni iste
+                    requestNotificationPermission();
+                    
+                    // Durum kontrolünü başlat (her 3 saniyede bir - daha hızlı güncelleme)
+                    statusInterval = setInterval(checkStatus, 3000);
+                    checkStatus(); // İlk kontrolü hemen yap
+                    
+                    // Zamanlayıcıyı başlat (her saniye güncelle)
+                    timeInterval = setInterval(updateElapsedTime, 1000);
+                    updateElapsedTime(); // İlk güncellemeyi hemen yap
+                    
+                    // Başlangıç bildirimi
+                    showNotification(
+                        'CV Analizi Başlatıldı 🚀',
+                        'Analiz arka planda çalışıyor. Tamamlandığında bildirim alacaksınız.'
+                    );
+                } else {
+                    throw new Error(data.error || 'Bir hata oluştu');
+                }
+            } catch (error) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Analiz Et';
+                progressContainer.classList.remove('active');
+                showError(error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+        });
+    </script>
+</body>
+</html>

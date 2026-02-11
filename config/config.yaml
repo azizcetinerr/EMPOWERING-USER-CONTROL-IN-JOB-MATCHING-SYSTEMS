@@ -1,0 +1,186 @@
+# TÜBİTAK Proje - Adil İş Eşleştirme Sistemi Konfigürasyon Dosyası
+
+# Veri Kaynakları
+data_sources:
+  youth_portal:
+    list_url: "https://youth.europa.eu/go-abroad/volunteering/opportunities_en"
+    base_url: "https://youth.europa.eu"
+    api_url: "https://youth.europa.eu/api/rest/eyp/v1/search_en"  # ⚡ API endpoint - çok daha hızlı
+    use_api: true  # API kullanımını etkinleştir (Selenium yerine)
+    output_file: "data/raw/proje_linkleri.txt"
+  
+  europass_cv:
+    # CV URL'i environment variable'dan alınacak veya buraya yazılacak
+    # Örnek: "https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/aziz+muammer-%C3%A7etiner/7166a565-f20c-4c5c-83a4-00a4db71fd09?view=html"
+    url: "" # Lütfen buraya yeni Europass CV linkinizi yapıştırın
+    output_files:
+      ham_beceriler: "data/raw/IP1_Ciktisi_Aday_Ham_Beceriler.pkl"
+      tam_metin: "data/raw/IP1_Ciktisi_Aday_Tam_Metin.txt"
+  
+  motivation_letter:
+    # Örnek motivasyon mektubu (gerçek kullanımda dosyadan okunacak)
+    text: |
+      I would like to do activities and things that makes me more self-confident. I like to travel too. 
+      I wanted to connect these two things together thats why I decided to become Global Volunteer of AIESEC. 
+      I was working at school with kids on project Global Classroom in Iasi Romania. 
+      I lived there for 2 months with people from all over the world.
+
+# Model Ayarları
+models:
+  skill_extraction:
+    spacy_model: "en_core_web_lg"  # Daha hızlı model (lg'den 3-4x daha hızlı, biraz daha az doğru)
+    skill_db_file: "data/external/skill_db_relax_20.json"
+    max_text_length: 5000  # Çok uzun metinleri kısalt (performans için - 8000'den 5000'e düşürüldü hız için) - 0 = sınırsız
+    max_ngram_results: 20  # En iyi N ngram al (performans için - 40'tan 20'ye düşürüldü hız için) - 0 = sınırsız
+  
+  embedding:
+    model_name: "xlm-roberta-base"
+    device: "auto"  # "auto", "cpu", "cuda", "mps"
+    batch_size: 128  # MPS/GPU için optimize edildi (64 -> 128, hızlandırma için)
+  
+  ai_detection:
+    model_name: "roberta-base-openai-detector"
+  
+  nli:
+    model_name: "cross-encoder/nli-distilroberta-base"
+    device: "auto"
+
+# Skorlama Ağırlıkları
+scoring_weights:
+  matching_score: 0.5      # M-Skoru ağırlığı
+  sincerity_score: 0.3      # S-Skoru ağırlığı
+  reliability_score: 0.2   # R-Skoru ağırlığı
+
+# Samimiyet Skoru Ayarları
+sincerity_scoring:
+  human_score_weight: 0.3
+  context_score_weight: 0.4
+  
+  # Gelişmiş NLP Analizi
+  cliche_penalty: 15.0  # Klişe kullanımı cezası (maksimum)
+  detail_bonus: 20.0  # Spesifik detay bonusu (maksimum)
+  subjectivity_bonus: 10.0  # Öznellik bonusu (maksimum)
+  robotic_penalty: 10.0  # Robotik dil cezası (maksimum)
+  sentiment_bonus: 5.0  # Pozitif sentiment bonusu (maksimum)
+  
+  # Klişe ifadeler listesi
+  cliche_phrases:
+    - "life-changing experience"
+    - "hayat değiştiren deneyim"
+    - "unforgettable journey"
+    - "once in a lifetime"
+    - "transformative"
+    - "amazing opportunity"
+    - "unique experience"
+    - "incredible"
+    - "extraordinary"
+    - "exceptional"
+    - "once in a lifetime opportunity"
+    - "life-altering"
+    - "unforgettable"
+  
+  # Normalizasyon
+  normalization_method: "sigmoid"  # "sigmoid", "log", "minmax"
+  
+  top_n_projects: 50  # S-Skoru hesaplanacak ilk N proje (calculate_all=False ise) - Artırıldı kalite için
+  calculate_all: false  # False ise sadece top N için hesaplanır (hızlı ve kaliteli) - True yavaş ama tüm projeler için
+
+# Adillik (Fairness) Ayarları
+fairness:
+  enabled: true
+  bonus_keywords: ["culture", "art", "heritage", "diversity"]
+  bonus_score: 5.0
+
+# Diversity-Aware Ranking (MMR) Ayarları
+diversity_aware_ranking:
+  enabled: true  # MMR algoritmasını etkinleştir
+  top_k: 20  # MMR ile seçilecek proje sayısı (top-K) - Artırıldı: 10 -> 20 (RC'yi artırmak için)
+  lambda: 0.2  # Relevance ağırlığı (0.0-1.0), 0.2 = %20 relevance, %80 diversity (Diversity Score artışı için düşürüldü: 0.3 -> 0.2)
+
+# Performance Metrics Ayarları
+performance_metrics:
+  top_k: 10  # Metriklerin hesaplanacağı proje sayısı (default: 5, artırıldı: 10) - RC'yi artırmak için
+
+# Güvenilirlik Skoru (R-Skoru) Gelişmiş Ayarları
+reliability_scoring:
+  # Kurum geçmiş proje sayısı bonusu
+  project_count_bonus:
+    enabled: true
+    thresholds: [1, 5, 10, 20, 50]  # Proje sayısı eşikleri
+    bonuses: [2.0, 5.0, 10.0, 15.0, 20.0]  # Her eşik için bonus puan
+  
+  # Onay statüsü bonusu
+  verified_bonus:
+    enabled: true
+    bonus_score: 15.0  # Onaylı kurumlar için bonus
+  
+  # Eksik veri cezaları
+  missing_data_penalties:
+    enabled: true
+    address: 10.0  # Adres eksikse ceza
+    website: 10.0  # Web sitesi eksikse ceza
+    organization_name: 5.0  # Kurum adı eksikse ceza
+  
+  # Normalizasyon
+  normalize_to_0_100: true  # Sonucu 0-100 aralığına normalize et
+
+# Veri İşleme Ayarları
+data_processing:
+  remove_duplicates: true
+  min_skill_length: 2  # Minimum beceri uzunluğu (karakter)
+  skill_stopwords: ["com", "lo", "e", "m", "km"]  # Filtrelenecek beceriler
+  clean_empty_descriptions: true
+
+# Web Scraping Ayarları
+scraping:
+  selenium:
+    headless: true
+    wait_timeout: 45
+    page_load_timeout: 300  # CV parsing için uzun metinler yüklenebilir (5 dakika)
+    implicit_wait: 10
+  
+  requests:
+    retry_count: 5  # Rate limiting için artırıldı
+    retry_delay: 10  # saniye (429 hatası için)
+    request_delay: 1  # Her istek arası bekleme (saniye) - Adaptive olacak (otomatik ayarlanır)
+    timeout: 30
+
+# Çıktı Dosyaları
+output:
+  base_dir: "outputs"
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  results_dir: "outputs/results"
+  
+  files:
+    project_links: "proje_linkleri_latest.txt"
+    project_details: "youth_portal_projeler_detayli.csv"
+    candidate_skills_raw: "IP1_Ciktisi_Aday_Ham_Beceriler.pkl"
+    candidate_skills_extracted: "IP1_Ciktisi_Aday_Cikarilan_Beceriler.pkl"
+    candidate_vectors: "IP1_Ciktisi_Aday_Vektorleri.npy"
+    projects_with_skills: "IP1_Ciktisi_Projeler_Becerili.pkl"
+    projects_with_vectors: "IP1_Ciktisi_Projeler_Vektorlu.pkl"
+    matching_scores: "IP2_Ciktisi_M_Skorlu_Projeler.pkl"
+    sincerity_scores: "IP3_Ciktisi_S_Skorlu_Projeler.pkl"
+    reliability_details: "IP4_Ciktisi_R_Detaylari.pkl"
+    reliability_score: "IP4_Ciktisi_R_Skoru.txt"
+    final_ranking: "IP5_Nihai_Adil_Siralama.csv"
+    visualization: "IP6_Sonuc_Grafigi.png"
+    system_diagram: "Sistem_Akis_Semasi.png"
+
+# Logging Ayarları
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/proje.log"
+  console: true
+
+# Performans Ayarları
+performance:
+  use_multiprocessing: true
+  num_workers: 8  # Paralel scraping için thread sayısı (adaptive rate limiting ile optimize edildi) - Artırıldı
+  skill_extraction_workers: 4  # Paralel beceri çıkarma için thread sayısı (CPU sayısına göre otomatik sınırlanır, max 16) - 16'dan 4'e düşürüldü (memory contention sorunu çözümü için)
+  chunk_size: 50  # Batch işleme için
+  matching_score_batch_size: 100  # M skoru hesaplama için batch size (optimizasyon)
+  use_torch_compile: false  # Torch compile (PyTorch 2.0+) - deneysel, bazı modellerde sorun çıkarabilir
+

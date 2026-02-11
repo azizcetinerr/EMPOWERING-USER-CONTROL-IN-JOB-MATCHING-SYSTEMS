@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+test_env/
+tubitak-env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+
+# Data Directories
+data/
+!data/external/skill_db_relax_20.json
+!data/external/token_dist.json
+
+# Generated Files
+outputs/
+logs/
+*.log
+*.pkl
+*.npy
+*.csv
+!requirements.txt
+checkpoints/
+api_cache.json
+user_feedback.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Model cache (optional - büyük dosyalar)
+.cache/
+models/

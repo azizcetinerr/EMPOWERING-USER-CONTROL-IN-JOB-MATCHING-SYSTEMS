@@ -1,0 +1,100 @@
+📁 Tubitak_Proje_Yeni/
+│
+├── 📄 README.md                    # Genel proje dokümantasyonu
+├── 📄 KURULUM.md                   # Kurulum ve kullanım kılavuzu
+├── 📄 GELISTIRME_NOTLARI.md        # Yapılan iyileştirmeler
+├── 📄 requirements.txt             # Python bağımlılıkları
+├── 📄 .gitignore                   # Git ignore dosyası
+│
+├── 📁 config/                      # ⚙️ KONFİGÜRASYON
+│   └── config.yaml                # Tüm sistem ayarları (URL'ler, model isimleri, ağırlıklar)
+│
+├── 📁 src/                         # 💻 KAYNAK KODLAR
+│   │
+│   ├── 📄 pipeline.py              # 🚀 ANA PIPELINE (Tüm işlemleri çalıştırır)
+│   │
+│   ├── 📁 data_collection/         # 📥 VERİ TOPLAMA
+│   │   ├── youth_portal_scraper.py      # Youth Portal'dan proje linklerini çeker
+│   │   ├── project_detail_scraper.py    # Her projenin detay sayfasını çeker
+│   │   └── cv_parser.py                 # Europass CV'yi parse eder
+│   │
+│   ├── 📁 skill_extraction/        # 🔍 BECERİ ÇIKARMA
+│   │   ├── skill_extractor.py           # SkillNER ile becerileri çıkarır
+│   │   └── vectorizer.py               # XLM-RoBERTa ile vektörizasyon
+│   │
+│   ├── 📁 scoring/                 # 📊 SKORLAMA
+│   │   ├── matching_score.py            # M-Skoru: Eşleştirme skoru
+│   │   ├── sincerity_score.py           # S-Skoru: Samimiyet skoru (NLP analizi, klişe tespiti, sentiment)
+│   │   ├── reliability_score.py         # R-Skoru: Güvenilirlik skoru (proje-spesifik, kurum bilgileri)
+│   │   └── final_ranking.py            # Nihai adil sıralama (Z-Score normalizasyonu, MOO)
+│   │
+│   └── 📁 utils/                   # 🛠️ YARDIMCI FONKSİYONLAR
+│       ├── config_loader.py             # Config dosyasını yükler
+│       ├── logger.py                     # Logging sistemi
+│       └── data_cleaner.py                # Veri temizleme fonksiyonları
+│
+├── 📁 outputs/                     # 📤 ÇIKTI DOSYALARI
+│   ├── raw/                        # Ham veriler
+│   ├── processed/                  # İşlenmiş veriler (.pkl, .npy)
+│   └── results/                    # Sonuçlar (.csv, .png)
+│
+└── 📁 logs/                        # 📝 LOG DOSYALARI
+    └── proje.log                   # Sistem logları
+
+═══════════════════════════════════════════════════════════════════
+
+📊 İŞLEM AKIŞI (Pipeline):
+
+1️⃣  IP1: Veri Toplama ve Standardizasyon
+    ├── Youth Portal'dan proje linklerini çek
+    ├── Her projenin detay sayfasını çek
+    ├── CV'yi parse et
+    ├── SkillNER ile becerileri çıkar
+    └── XLM-RoBERTa ile vektörize et
+
+2️⃣  IP2: Eşleştirme Skoru (M-Skoru)
+    └── Cosine similarity ile beceri eşleştirme
+
+3️⃣  IP3: Samimiyet Skoru (S-Skoru)
+    ├── AI detection ile motivasyon mektubu analizi
+    ├── Bağlamsal benzerlik hesaplama
+    ├── Klişe tespiti ve cezalandırma
+    ├── Spesifik detay bonusu (tarih, bütçe, katılımcı sayısı)
+    ├── Sentiment analizi (öznellik, robotik dil)
+    └── Sigmoid normalizasyon ile geniş skor aralığı
+
+4️⃣  IP4: Güvenilirlik Skoru (R-Skoru)
+    ├── NLI modeli ile CV doğrulama
+    ├── Her proje için ayrı R skoru
+    ├── Kurum bilgileri (proje sayısı, onay durumu) ile bonus/ceza
+    └── Eksik veri cezası
+
+5️⃣  IP5: Adil Sıralama
+    ├── Z-Score normalizasyonu (tüm skorlar dengeli ölçekte)
+    ├── Çok amaçlı optimizasyon (MOO)
+    ├── Adillik bonusu uygulama
+    └── Ham ve normalize skorların kaydedilmesi
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 KULLANIM:
+
+Basit Kullanım:
+    python src/pipeline.py
+
+Python'da:
+    from src.pipeline import ProjectPipeline
+    pipeline = ProjectPipeline()
+    df_final = pipeline.run_full_pipeline()
+
+═══════════════════════════════════════════════════════════════════
+
+📚 DOKÜMANTASYON:
+
+- README.md           → Genel proje bilgileri
+- KURULUM.md          → Detaylı kurulum kılavuzu
+- GELISTIRME_NOTLARI.md → İyileştirme detayları
+- config/config.yaml  → Tüm ayarlar
+
+═══════════════════════════════════════════════════════════════════
+
