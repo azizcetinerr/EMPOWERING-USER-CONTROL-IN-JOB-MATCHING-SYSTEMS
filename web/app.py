@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TÜBİTAK Proje - Web Arayüzü
+İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ - Web Arayüzü
 CV linki ile proje eşleştirme sistemi
 """
 
@@ -1005,7 +1005,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     
     print("=" * 80)
-    print("TÜBİTAK Proje - Web Arayüzü Başlatılıyor...")
+    print("İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ - Web Arayüzü Başlatılıyor...")
     print("=" * 80)
     
     # Modelleri lazy loading ile yükle (sadece gerektiğinde)

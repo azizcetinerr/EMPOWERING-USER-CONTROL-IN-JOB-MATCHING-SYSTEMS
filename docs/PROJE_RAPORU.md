@@ -1,5 +1,5 @@
-# TÜBİTAK Proje Raporu
-## Adil İş Eşleştirme Sistemi: Çok Boyutlu Skorlama ve NLP Tabanlı Gönüllülük Projesi Öneri Sistemi
+# İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ
+## İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ: Çok Boyutlu Skorlama ve NLP Tabanlı Gönüllülük Projesi Öneri Sistemi
 
 ---
 
@@ -802,5 +802,5 @@ Görsel sistem akış şeması (`Sistem_Akis_Semasi.png`).
 
 ---
 
-*Bu rapor, TÜBİTAK desteğiyle geliştirilen "Adil İş Eşleştirme Sistemi" projesinin kapsamlı bir dokümantasyonudur.*
+*Bu rapor, TÜBİTAK desteğiyle geliştirilen "İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ" projesinin kapsamlı bir dokümantasyonudur.*
 

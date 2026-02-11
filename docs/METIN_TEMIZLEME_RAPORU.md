@@ -1,14 +1,14 @@
 # Metin Temizleme ve Proje Başlığı İyileştirme Raporu
 
 **Tarih:** 14 Aralık 2025  
-**Proje:** TÜBİTAK Proje Eşleştirme Sistemi  
+**Proje:** İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ  
 **Versiyon:** v2.0
 
 ---
 
 ## 📋 Özet
 
-Bu rapor, TÜBİTAK Proje Eşleştirme Sistemi'nde proje başlıkları ve açıklamalarında görülen dil kodları ve birleşmiş kelimeler sorununun çözümünü detaylandırmaktadır. Kullanıcı arayüzünde görüntülenen proje bilgilerinin daha okunabilir ve profesyonel görünmesi için kapsamlı metin temizleme fonksiyonları geliştirilmiştir.
+Bu rapor, İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ projesinde proje başlıkları ve açıklamalarında görülen dil kodları ve birleşmiş kelimeler sorununun çözümünü detaylandırmaktadır. Kullanıcı arayüzünde görüntülenen proje bilgilerinin daha okunabilir ve profesyonel görünmesi için kapsamlı metin temizleme fonksiyonları geliştirilmiştir.
 
 ---
 

@@ -1,4 +1,4 @@
-# TÜBİTAK Proje - Adil İş Eşleştirme Sistemi
+# İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ
 
 Bu proje, gönüllüler ve projeler arasında adil, şeffaf ve yetenek bazlı eşleştirme yapan yapay zeka destekli bir sistemdir.
 
