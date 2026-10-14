@@ -8,7 +8,7 @@ The MMR (Maximal Marginal Relevance) algorithm was added and enabled. This algor
 **Your current metric results were probably produced without MMR!** To see the effect of MMR:
 
 1. **Rerun the pipeline** (Flask app or `src/pipeline.py`)
-2. **OR** run the `test_mmr.py` script to test whether MMR works
+2. **OR** run the `tests/test_mmr.py` script to test whether MMR works
 
 ## Config Settings
 
@@ -36,7 +36,7 @@ diversity_aware_ranking:
 To test whether MMR works:
 
 ```bash
-python test_mmr.py
+python tests/test_mmr.py
 ```
 
 This script:
@@ -77,7 +77,7 @@ With MMR active:
 
 1. Make sure `diversity_aware_ranking.enabled: true` is set in `config.yaml`
 2. Look for the message "🔄 Applying diversity-aware ranking with MMR (Maximal Marginal Relevance)" in the logs
-3. Run the `test_mmr.py` script
+3. Run the `tests/test_mmr.py` script
 
 ## Example Usage
 

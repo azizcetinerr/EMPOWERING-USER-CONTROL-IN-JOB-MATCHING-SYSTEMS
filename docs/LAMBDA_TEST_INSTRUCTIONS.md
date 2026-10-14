@@ -8,7 +8,7 @@ The MMR Diversity Score stays at 0.0 and does not change.
 ### 1. Run the lambda test script
 
 ```bash
-python test_mmr_lambda.py
+python tests/test_mmr_lambda.py
 ```
 
 This script:

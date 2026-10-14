@@ -5,13 +5,13 @@ To compute and save the metrics from existing IP5 results:
 ## Usage
 
 ```bash
-python save_metrics_from_existing.py
+python scripts/save_metrics_from_existing.py
 ```
 
 or
 
 ```bash
-python3 save_metrics_from_existing.py
+python3 scripts/save_metrics_from_existing.py
 ```
 
 ## What Does the Script Do?

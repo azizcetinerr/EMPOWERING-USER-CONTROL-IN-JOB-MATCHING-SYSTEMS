@@ -10,7 +10,7 @@ import numpy as np
 import pickle
 
 # Find the project root
-project_root = Path(__file__).parent
+project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.utils.config_loader import load_config

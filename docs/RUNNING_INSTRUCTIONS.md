@@ -50,30 +50,11 @@ Open `config/config.yaml` and check:
 
 ### 3. Run the pipeline
 
-#### Option A: Whole pipeline (from scratch)
-
 ```bash
 python src/pipeline.py
 ```
 
-or
-
-```bash
-python test_pipeline.py
-```
-
-#### Option B: Scoring only (if IP1 outputs exist)
-
-If the `IP1_output_*.pkl` files exist:
-
-```bash
-python run_scoring_only.py
-```
-
-This script:
-- Uses the existing IP1 outputs
-- Runs only IP2-IP5 (faster)
-- Computes the scores for all projects
+If the `IP1_output_*.pkl` files already exist, the pipeline uses them as a cache and only collects data for new projects.
 
 ## 📊 Expected Outputs
 

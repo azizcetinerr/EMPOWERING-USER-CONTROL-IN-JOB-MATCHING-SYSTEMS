@@ -677,9 +677,9 @@ EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
 │       └── final_ranking.py          # MMR implementation
 ├── config/
 │   └── config.yaml                   # MMR settings
-├── test_mmr.py                       # Basic MMR test
-├── test_mmr_lambda.py                # Lambda optimization
-├── debug_diversity.py                # Diversity analysis
+├── tests/test_mmr.py                 # Basic MMR test
+├── tests/test_mmr_lambda.py          # Lambda optimization
+├── scripts/debug_diversity.py        # Diversity analysis
 └── IP1_output_listings_vectorized.pkl # Vector file
 ```
 
