@@ -42,7 +42,9 @@ data/
 !data/external/token_dist.json
 
 # Generated Files
-outputs/
+outputs/*
+!outputs/results/
+outputs/results/*
 logs/
 *.log
 *.pkl
@@ -64,3 +66,7 @@ Thumbs.db
 # Model cache (optional - büyük dosyalar)
 .cache/
 models/
+
+# Makale (fairpass_v2) yeniden uretilebilirlik dosyalari
+!outputs/results/IP5_S_yeniden.csv
+!outputs/results/IP5_Nihai_Adil_Siralama.csv
