@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sonuçlar - İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ</title>
+    <title>Results - EMPOWERING USER CONTROL IN JOB MATCHING SYSTEMS</title>
     <style>
         * {
             margin: 0;
@@ -354,12 +354,12 @@
             if (allProjects.style.display === 'none') {
                 topProjects.style.display = 'none';
                 allProjects.style.display = 'block';
-                showAllBtn.textContent = '⬆️ İlk 10\'a Dön';
+                showAllBtn.textContent = '⬆️ Back to the top 10';
             } else {
                 topProjects.style.display = 'block';
                 allProjects.style.display = 'none';
-                showAllBtn.textContent = '📋 Tüm Alakalı Projeleri Göster';
-                // Sayfanın başına kaydır
+                showAllBtn.textContent = '📋 Show all relevant projects';
+                // Scroll to the top of the page
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
@@ -369,16 +369,16 @@
             const projectCard = button.closest('.project-card');
             const feedbackButtons = projectCard.querySelectorAll('.feedback-btn');
             
-            // Butonları devre dışı bırak
+            // Disable the buttons
             feedbackButtons.forEach(btn => {
                 btn.disabled = true;
             });
             
-            // Loading durumu
+            // Loading state
             const originalText = button.textContent;
-            button.textContent = '⏳ Gönderiliyor...';
+            button.textContent = '⏳ Sending...';
             
-            // Feedback gönder
+            // Send the feedback
             fetch('/feedback', {
                 method: 'POST',
                 headers: {
@@ -393,26 +393,26 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Başarı mesajı göster
-                    button.textContent = feedbackType === 'positive' ? '✅ Uygun' : '❌ Uygun Değil';
+                    // Show a success message
+                    button.textContent = feedbackType === 'positive' ? '✅ Suitable' : '❌ Not suitable';
                     button.classList.add('submitted');
                     
-                    // Mesaj göster
+                    // Show the message
                     let messageDiv = projectCard.querySelector('.feedback-message');
                     if (!messageDiv) {
                         messageDiv = document.createElement('div');
                         messageDiv.className = 'feedback-message success';
                         projectCard.querySelector('.project-actions').appendChild(messageDiv);
                     }
-                    messageDiv.textContent = 'Geri bildiriminiz kaydedildi. Teşekkürler!';
+                    messageDiv.textContent = 'Your feedback has been saved. Thank you!';
                     messageDiv.style.display = 'block';
                     
-                    // 3 saniye sonra mesajı gizle
+                    // Hide the message after 3 seconds
                     setTimeout(() => {
                         messageDiv.style.display = 'none';
                     }, 3000);
                 } else {
-                    throw new Error(data.error || 'Geri bildirim gönderilemedi');
+                    throw new Error(data.error || 'Feedback could not be sent');
                 }
             })
             .catch(error => {
@@ -420,14 +420,14 @@
                 button.textContent = originalText;
                 button.disabled = false;
                 
-                // Hata mesajı göster
+                // Show an error message
                 let messageDiv = projectCard.querySelector('.feedback-message');
                 if (!messageDiv) {
                     messageDiv = document.createElement('div');
                     messageDiv.className = 'feedback-message error';
                     projectCard.querySelector('.project-actions').appendChild(messageDiv);
                 }
-                messageDiv.textContent = 'Geri bildirim gönderilemedi. Lütfen tekrar deneyin.';
+                messageDiv.textContent = 'Feedback could not be sent. Please try again.';
                 messageDiv.style.display = 'block';
                 
                 setTimeout(() => {
@@ -439,32 +439,32 @@
 </head>
 <body>
     <div class="container">
-        <a href="/" class="back-button">← Yeni Analiz</a>
+        <a href="/" class="back-button">← New analysis</a>
         
         <div class="header">
-            <h1>🎯 Analiz Sonuçları</h1>
-            <p class="subtitle">{{ results.total_projects }} proje analiz edildi</p>
+            <h1>🎯 Analysis Results</h1>
+            <p class="subtitle">{{ results.total_projects }} projects analyzed</p>
         </div>
 
         {% if results.stats %}
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>M Skoru (Eşleştirme)</h3>
+                <h3>M Score (Matching)</h3>
                 <div class="value">{{ "%.2f"|format(results.stats.m_score.avg) }}</div>
                 <div class="range">{{ "%.2f"|format(results.stats.m_score.min) }} - {{ "%.2f"|format(results.stats.m_score.max) }}</div>
             </div>
             <div class="stat-card">
-                <h3>S Skoru (Samimiyet)</h3>
+                <h3>S Score (Sincerity)</h3>
                 <div class="value">{% if results.stats.s_score.avg is not none %}{{ "%.2f"|format(results.stats.s_score.avg) }}{% else %}-{% endif %}</div>
                 <div class="range">{% if results.stats.s_score.min is not none and results.stats.s_score.max is not none %}{{ "%.2f"|format(results.stats.s_score.min) }} - {{ "%.2f"|format(results.stats.s_score.max) }}{% else %}-{% endif %}</div>
             </div>
             <div class="stat-card">
-                <h3>R Skoru (Güvenilirlik)</h3>
+                <h3>R Score (Reliability)</h3>
                 <div class="value">{{ "%.2f"|format(results.stats.r_score.avg) }}</div>
                 <div class="range">{{ "%.2f"|format(results.stats.r_score.min) }} - {{ "%.2f"|format(results.stats.r_score.max) }}</div>
             </div>
             <div class="stat-card">
-                <h3>Final Skor</h3>
+                <h3>Final Score</h3>
                 <div class="value">{{ "%.2f"|format(results.stats.final_score.avg) }}</div>
                 <div class="range">{{ "%.2f"|format(results.stats.final_score.min) }} - {{ "%.2f"|format(results.stats.final_score.max) }}</div>
             </div>
@@ -472,7 +472,7 @@
         {% endif %}
 
         <div class="projects-section">
-            <h2 class="section-title">🏆 En Uygun Projeler (Top 10)</h2>
+            <h2 class="section-title">🏆 Best-Matching Projects (Top 10)</h2>
             
             <div id="top-projects">
             {% if results.top_projects %}
@@ -516,15 +516,15 @@
                         <div class="project-actions">
                     {% if project.link %}
                     <a href="{{ project.link }}" target="_blank" class="project-link">
-                        Proje Detaylarını Görüntüle →
+                        View project details →
                     </a>
                     {% endif %}
                             <div class="feedback-buttons">
-                                <button class="feedback-btn positive" onclick="submitFeedback('{{ project.project_id }}', 'positive', '{{ session_id }}')" title="Bu proje uygun">
-                                    👍 Uygun
+                                <button class="feedback-btn positive" onclick="submitFeedback('{{ project.project_id }}', 'positive', '{{ session_id }}')" title="This project is suitable">
+                                    👍 Suitable
                                 </button>
-                                <button class="feedback-btn negative" onclick="submitFeedback('{{ project.project_id }}', 'negative', '{{ session_id }}')" title="Bu proje uygun değil">
-                                    👎 Uygun Değil
+                                <button class="feedback-btn negative" onclick="submitFeedback('{{ project.project_id }}', 'negative', '{{ session_id }}')" title="This project is not suitable">
+                                    👎 Not suitable
                                 </button>
                             </div>
                         </div>
@@ -532,7 +532,7 @@
                 {% endfor %}
             {% else %}
                 <div class="no-results">
-                    <p>Sonuç bulunamadı.</p>
+                    <p>No results found.</p>
                     </div>
                 {% endif %}
             </div>
@@ -579,15 +579,15 @@
                         <div class="project-actions">
                             {% if project.link %}
                             <a href="{{ project.link }}" target="_blank" class="project-link">
-                                Proje Detaylarını Görüntüle →
+                                View project details →
                             </a>
                             {% endif %}
                             <div class="feedback-buttons">
-                                <button class="feedback-btn positive" onclick="submitFeedback('{{ project.project_id }}', 'positive', '{{ session_id }}')" title="Bu proje uygun">
-                                    👍 Uygun
+                                <button class="feedback-btn positive" onclick="submitFeedback('{{ project.project_id }}', 'positive', '{{ session_id }}')" title="This project is suitable">
+                                    👍 Suitable
                                 </button>
-                                <button class="feedback-btn negative" onclick="submitFeedback('{{ project.project_id }}', 'negative', '{{ session_id }}')" title="Bu proje uygun değil">
-                                    👎 Uygun Değil
+                                <button class="feedback-btn negative" onclick="submitFeedback('{{ project.project_id }}', 'negative', '{{ session_id }}')" title="This project is not suitable">
+                                    👎 Not suitable
                                 </button>
                             </div>
                         </div>
@@ -599,7 +599,7 @@
             {% if results.all_relevant_projects and results.all_relevant_projects|length > 10 %}
             <div style="text-align: center; margin-top: 30px;">
                 <button id="show-all-btn" class="show-all-button" onclick="toggleAllProjects()">
-                    📋 Tüm Alakalı Projeleri Göster ({{ results.all_relevant_projects|length }} proje)
+                    📋 Show all relevant projects ({{ results.all_relevant_projects|length }} projects)
                 </button>
                 </div>
             {% endif %}

@@ -51,7 +51,7 @@ outputs/
 !requirements.txt
 !README.md
 
-# Config (eğer hassas bilgiler varsa)
+# Config (if it contains sensitive information)
 # config/config.yaml
 
 # OS
@@ -63,9 +63,8 @@ Thumbs.db
 models/
 
 # Data
-veriler/
 *.pkl
 *.npy
-proje_linkleri.txt
-youth_portal_projeler_detayli.csv
+listing_links.txt
+youth_portal_listings_detailed.csv
 

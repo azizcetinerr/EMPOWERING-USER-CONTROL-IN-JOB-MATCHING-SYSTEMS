@@ -1,5 +1,5 @@
 """
-Logging sistemi
+Logging system
 """
 
 import logging
@@ -9,44 +9,44 @@ from typing import Optional
 
 
 def setup_logger(
-    name: str = "tubitak_proje",
+    name: str = "tubitak_project",
     log_level: str = "INFO",
     log_file: Optional[str] = None,
     console: bool = True,
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 ) -> logging.Logger:
     """
-    Logger kurulumu yapar.
+    Sets up the logger.
     
     Args:
-        name: Logger adı
-        log_level: Log seviyesi (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Log dosyası yolu (None ise dosyaya yazmaz)
-        console: Konsola yazdırma (True/False)
-        log_format: Log formatı
+        name: Logger name
+        log_level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        log_file: Path of the log file (if None, nothing is written to a file)
+        console: Print to the console (True/False)
+        log_format: Log format
     
     Returns:
-        Yapılandırılmış logger
+        Configured logger
     """
     logger = logging.getLogger(name)
     logger.setLevel(getattr(logging, log_level.upper()))
     
-    # Mevcut handler'ları temizle
+    # Clear existing handlers
     logger.handlers.clear()
     
-    # Format oluştur
+    # Create the formatter
     formatter = logging.Formatter(log_format)
     
-    # Konsol handler
+    # Console handler
     if console:
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(getattr(logging, log_level.upper()))
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
-    # Dosya handler
+    # File handler
     if log_file:
-        # Log dizinini oluştur
+        # Create the log directory
         log_path = Path(log_file)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         

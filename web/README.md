@@ -1,142 +1,142 @@
-# Web Arayüzü
+# Web Interface
 
-Bu klasör web arayüzü ile ilgili tüm dosyaları içerir.
+This folder contains all files related to the web interface.
 
-## Dosya Yapısı
+## File Structure
 
 ```
 web/
-├── app.py              # Flask web uygulaması
-├── templates/          # HTML şablonları
-│   ├── index.html     # Ana sayfa
-│   └── results.html   # Sonuçlar sayfası
-├── static/            # Statik dosyalar (CSS, JS, resimler)
-└── README.md          # Bu dosya
+├── app.py              # Flask web application
+├── templates/          # HTML templates
+│   ├── index.html     # Home page
+│   └── results.html   # Results page
+├── static/            # Static files (CSS, JS, images)
+└── README.md          # This file
 ```
 
-## Kurulum
+## Installation
 
-1. Gerekli paketleri yükleyin (proje kök dizininde):
+1. Install the required packages (in the project root directory):
 ```bash
 pip install -r requirements.txt
 ```
 
-veya sadece Flask için:
+or only for Flask:
 ```bash
 pip install flask pyyaml
 ```
 
-## Kullanım
+## Usage
 
-1. Web uygulamasını başlatın:
+1. Start the web application:
 ```bash
 cd web
 python app.py
 ```
 
-veya proje kök dizininden:
+or from the project root directory:
 
 ```bash
 python web/app.py
 ```
 
-2. Tarayıcınızda şu adresi açın:
+2. Open this address in your browser:
 ```
 http://localhost:5000
 ```
 
-## Kullanım Adımları
+## Usage Steps
 
-1. **CV Linki Girin**: Ana sayfada Europass CV paylaşım linkinizi girin
-   - Örnek format: `https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/...`
+1. **Enter the CV link**: enter your Europass CV sharing link on the home page
+   - Example format: `https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/...`
 
-2. **Analiz Et**: "Analiz Et" butonuna tıklayın
+2. **Analyze**: click the "Analyze" button
 
-3. **İlerlemeyi Takip Edin**: 
-   - İşlem sırasında ilerleme çubuğu ve mesajlar görüntülenecektir
-   - İşlem tamamlandığında otomatik olarak sonuçlar sayfasına yönlendirileceksiniz
+3. **Follow the progress**:
+   - A progress bar and messages are shown during processing
+   - When processing completes, you are redirected to the results page automatically
 
-4. **Sonuçları İnceleyin**:
-   - Top 10 proje listelenir
-   - Her proje için M, S, R ve Final skorları gösterilir
-   - Proje detaylarına link üzerinden ulaşabilirsiniz
+4. **Review the results**:
+   - The top 10 projects are listed
+   - The M, S, R and Final scores are shown for each project
+   - The project details can be reached through the link
 
-## Özellikler
+## Features
 
-- ✅ Modern ve kullanıcı dostu arayüz
-- ✅ Gerçek zamanlı ilerleme takibi
-- ✅ Detaylı skor gösterimi (M, S, R, Final)
-- ✅ Top 10 proje listesi
-- ✅ Responsive tasarım (mobil uyumlu)
-- ✅ Hata yönetimi ve kullanıcı geri bildirimi
+- ✅ Modern and user-friendly interface
+- ✅ Real-time progress tracking
+- ✅ Detailed score display (M, S, R, Final)
+- ✅ Top 10 project list
+- ✅ Responsive design (mobile-friendly)
+- ✅ Error handling and user feedback
 
-## Nasıl Çalışır?
+## How Does It Work?
 
-1. Kullanıcı Europass CV linkini girer
-2. Sistem CV'yi analiz eder ve becerileri çıkarır
-3. Tüm projelerle eşleştirme yapılır
-4. M (Eşleştirme), S (Samimiyet), R (Güvenilirlik) skorları hesaplanır
-5. Final skor ile sıralama yapılır
-6. En uygun 10 proje kullanıcıya gösterilir
+1. The user enters the Europass CV link
+2. The system analyzes the CV and extracts the skills
+3. Matching is done against all projects
+4. The M (matching), S (sincerity) and R (reliability) scores are computed
+5. The projects are ranked by the final score
+6. The 10 most suitable projects are shown to the user
 
-## Performans Optimizasyonları
+## Performance Optimizations
 
-Web uygulaması aşağıdaki optimizasyonları içerir (kaliteden ödün vermeden):
+The web application includes the following optimizations (without sacrificing quality):
 
-1. **Paralel Proje Scraping**: 
-   - 5 thread ile paralel scraping
-   - ~5x daha hızlı proje toplama
+1. **Parallel project scraping**:
+   - Parallel scraping with 5 threads
+   - ~5x faster project collection
    
-2. **Akıllı Proje Önbellekleme**: 
-   - Mevcut projeler önbellekten yüklenir
-   - Sadece yeni projeler scrape edilir
-   - Örnek: 100 proje varsa, 5 yeni eklendiğinde sadece 5'i scrape edilir
+2. **Smart project caching**:
+   - Existing projects are loaded from the cache
+   - Only new projects are scraped
+   - Example: if there are 100 projects and 5 new ones are added, only those 5 are scraped
    
-3. **Optimize S Skoru Hesaplama**: 
-   - Sadece top 50 proje için S skoru hesaplanır (en iyi eşleşenler)
-   - ~10-20x daha hızlı, kalite korunur
+3. **Optimized S score computation**:
+   - The S score is computed only for the top 50 projects (the best matches)
+   - ~10-20x faster, quality preserved
    
-4. **Model Ön Yükleme**: Modeller uygulama başlangıcında yüklenir ve önbelleğe alınır
-5. **Mevcut IP1 Çıktılarını Kullanma**: Eğer `IP1_Ciktisi_Projeler_Becerili.pkl` dosyası varsa, proje scraping'i atlanır
+4. **Model preloading**: models are loaded and cached at application start
+5. **Using existing IP1 outputs**: if the `IP1_output_listings_with_skills.pkl` file exists, project scraping is skipped
 
-**Detaylı bilgi için**: `PERFORMANS_OPTIMIZASYONLARI.md` dosyasına bakın.
+**For details**: see `PERFORMANCE_OPTIMIZATIONS.md`.
 
-### İlk Çalıştırma (Yavaş)
-- Proje verileri toplanır (~5-10 dakika)
-- Modeller yüklenir
-- CV analiz edilir
-- Skorlar hesaplanır
+### First run (slow)
+- Project data is collected (~5-10 minutes)
+- Models are loaded
+- The CV is analyzed
+- The scores are computed
 
-### Sonraki Çalıştırmalar (Hızlı)
-- Sadece CV analiz edilir (~30 saniye - 2 dakika)
-- Önbelleğe alınmış proje verileri kullanılır
-- Modeller zaten yüklü
+### Subsequent runs (fast)
+- Only the CV is analyzed (~30 seconds - 2 minutes)
+- Cached project data is used
+- Models are already loaded
 
-### Daha Hızlı Çalıştırmak İçin
+### To run faster
 
-1. **IP1 çıktılarını hazırlayın**: Önce bir kez tam pipeline'ı çalıştırın:
+1. **Prepare the IP1 outputs**: run the full pipeline once first:
    ```bash
    python src/pipeline.py
    ```
-   Bu, `IP1_Ciktisi_Projeler_Becerili.pkl` dosyasını oluşturur.
+   This creates the `IP1_output_listings_with_skills.pkl` file.
 
-2. **Sadece skorlama yapın**: Web uygulaması artık sadece CV analizi yapacak ve çok daha hızlı çalışacak.
+2. **Scoring only**: the web application now only analyzes the CV and runs much faster.
 
-## Notlar
+## Notes
 
-- İlk analiz uzun sürebilir (model yüklemeleri nedeniyle)
-- CV linkinin geçerli bir Europass paylaşım linki olması gerekir
-- Analiz sırasında tarayıcı penceresini kapatmayın
-- Proje verileri önbelleğe alındığı için, proje listesi güncellenmek istendiğinde önbelleği temizleyin
+- The first analysis may take long (because of model loading)
+- The CV link must be a valid Europass sharing link
+- Do not close the browser window during the analysis
+- Since project data is cached, clear the cache when you want to update the project list
 
-## Sorun Giderme
+## Troubleshooting
 
-**Hata: "CV URL gerekli"**
-- Lütfen geçerli bir CV linki girdiğinizden emin olun
+**Error: "CV URL is required"**
+- Make sure you entered a valid CV link
 
-**Hata: "Session bulunamadı"**
-- Sayfayı yenileyin ve tekrar deneyin
+**Error: "Session not found"**
+- Refresh the page and try again
 
-**Analiz çok uzun sürüyor**
-- Bu normaldir, özellikle ilk çalıştırmada modeller yüklenir
-- İlerleme çubuğunu takip edin
+**The analysis takes very long**
+- This is normal, especially on the first run when the models are loaded
+- Follow the progress bar

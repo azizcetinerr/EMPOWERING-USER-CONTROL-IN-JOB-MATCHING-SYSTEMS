@@ -1,4 +1,4 @@
 """
-Beceri çıkarma modülleri (SkillNER, vektörizasyon)
+Skill extraction modules (SkillNER, vectorization)
 """
 

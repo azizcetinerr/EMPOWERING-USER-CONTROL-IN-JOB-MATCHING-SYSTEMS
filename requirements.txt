@@ -1,7 +1,7 @@
-# İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ
-# Python 3.10+ önerilir
+# EMPOWERING USER CONTROL IN JOB MATCHING SYSTEMS
+# Python 3.10+ recommended
 
-# Veri İşleme ve Analiz
+# Data Processing and Analysis
 pandas>=2.1.0
 numpy>=1.24.0
 scikit-learn>=1.3.0
@@ -13,28 +13,28 @@ webdriver-manager>=4.0.0
 beautifulsoup4>=4.12.0
 requests>=2.31.0
 
-# NLP ve Yapay Zeka
+# NLP and Artificial Intelligence
 spacy>=3.7.0
 transformers>=4.35.0
 torch>=2.1.0
 textblob>=0.17.1
 skillNer>=1.0.3
 
-# Konfigürasyon ve Yardımcı Araçlar
+# Configuration and Utilities
 pyyaml>=6.0.1
 tqdm>=4.66.0
 
-# Görselleştirme
+# Visualization
 matplotlib>=3.8.0
 seaborn>=0.13.0
 
-# Web Uygulaması (Flask)
+# Web Application (Flask)
 flask>=3.0.0
 gunicorn>=21.2.0
 
-# Geliştirme Ortamı (Jupyter)
+# Development Environment (Jupyter)
 jupyter>=1.0.0
 ipywidgets>=8.1.0
 
-# Not: Spacy modeli ayrıca indirilmelidir:
+# Note: the spaCy model must be downloaded separately:
 # python -m spacy download en_core_web_lg

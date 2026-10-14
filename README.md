@@ -1,85 +1,100 @@
-# İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ
+# EMPOWERING USER CONTROL IN JOB MATCHING SYSTEMS
 
-Bu proje, gönüllüler ve projeler arasında adil, şeffaf ve yetenek bazlı eşleştirme yapan yapay zeka destekli bir sistemdir.
+This project is an AI-supported system that performs fair, transparent and skill-based matching between volunteers and projects.
 
-## 🚀 Özellikler
+## 🚀 Features
 
-- **Veri Toplama**: Youth Portal ve Europass CV entegrasyonu.
-- **Beceri Çıkarma**: NLP (SkillNER, Spacy) kullanarak metinlerden beceri analizi.
-- **Skorlama Sistemi**:
-  - **M-Skoru (Matching)**: Beceri ve vektör tabanlı uyumluluk.
-  - **S-Skoru (Sincerity)**: Samimiyet ve motivasyon analizi.
-  - **R-Skoru (Reliability)**: Kurum ve proje güvenilirlik analizi.
-- **Adil Sıralama**: Diversity-Aware Ranking (MMR) ve çok amaçlı optimizasyon.
+- **Data collection**: Youth Portal and Europass CV integration.
+- **Skill extraction**: skill analysis of texts with NLP (SkillNER, spaCy).
+- **Scoring system**:
+  - **M-Score (Matching)**: skill- and vector-based fit.
+  - **S-Score (Sincerity)**: sincerity and motivation analysis.
+  - **R-Score (Reliability)**: organization and project reliability analysis.
+- **Fair ranking**: diversity-aware ranking (MMR) and multi-objective optimization.
 
-## 📁 Proje Yapısı
+## 📁 Project Structure
 
 ```
-Tubitak_Proje/
-├── config/                 # Sistem ayarları (config.yaml)
-├── src/                    # Kaynak kodlar
-│   ├── data_collection/    # Veri toplama modülleri
-│   ├── skill_extraction/   # Beceri analiz modülleri
-│   ├── scoring/            # Skorlama algoritmaları
-│   └── pipeline.py         # Ana çalışma dosyası
-├── data/                   # Veri dosyaları (Ham ve İşlenmiş)
-├── outputs/                # Çıktılar ve Raporlar
-├── notebooks/              # Analiz notebookları
-└── web/                    # (Opsiyonel) Web arayüzü
+EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
+├── config/                 # System settings (config.yaml)
+├── src/                    # Source code
+│   ├── data_collection/    # Data collection modules
+│   ├── skill_extraction/   # Skill analysis modules
+│   ├── scoring/            # Scoring algorithms
+│   └── pipeline.py         # Main entry point
+├── data/                   # Data files (raw and processed)
+├── outputs/                # Outputs and reports
+├── notebooks/              # Analysis notebooks
+├── PAPER/                  # Paper reproducibility scripts
+└── web/                    # (Optional) web interface
 ```
 
-## 🛠 Kurulum
+## 🛠 Installation
 
-Kurulum adımları için [KURULUM.md](KURULUM.md) dosyasına bakınız.
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) for the installation steps.
 
-Hızlı kurulum:
+Quick installation:
 ```bash
 pip install -r requirements.txt
 python -m spacy download en_core_web_lg
 ```
 
-## 💻 Kullanım
+## 💻 Usage
 
-Sistemi çalıştırmak için:
+To run the system:
 
 ```bash
 python src/pipeline.py
 ```
 
-Detaylı kullanım talimatları için [KURULUM.md](KURULUM.md) ve [CALISTIRMA_TALIMATLARI.md](CALISTIRMA_TALIMATLARI.md) dosyalarını inceleyebilirsiniz.
+For detailed usage instructions, see [docs/INSTALLATION.md](docs/INSTALLATION.md) and [docs/RUNNING_INSTRUCTIONS.md](docs/RUNNING_INSTRUCTIONS.md).
 
-## 📊 Çıktılar
+## 📊 Outputs
 
-Sistem çalıştıktan sonra `outputs/` klasöründe aşağıdaki verileri üretir:
-- Sıralanmış aday listeleri
-- Skorlama detayları
-- Performans ve adillik grafikleri
+After a run, the system writes the following to the `outputs/` folder:
+- Ranked project lists
+- Scoring details
+- Performance and fairness charts
 
-## 📄 Makale verisi ve doğrulama betiği / Paper data and verification script
+## 📄 Paper data and verification script
 
-Bu bölüm FAIR-PASS makalesinin (fairpass_v2) *Data and Code Availability Statement* kısmında atıf yapılan dosyaları içerir.
 This section lists the files cited in the Data and Code Availability Statement of the FAIR-PASS paper (fairpass_v2).
 
-| Dosya / File | İçerik / Content |
+| File | Content |
 |---|---|
-| `outputs/results/IP5_S_yeniden.csv` | 952 ilanın skorlanmış hali (ham ve standardize M/S/R skorları, `Final_Skor`, `Adil_Skor`, `Insan_Puani`, `Baglam_Puani`) / Scored listing file for the 952 listings |
-| `outputs/results/IP5_Nihai_Adil_Siralama.csv` | Önceki sürümün skor dosyası; `recompute_sincerity.py` için girdi / Score file of the earlier version; input to `recompute_sincerity.py` |
-| `PAPER/recompute_sincerity.py` | S skorunu repodaki `src/scoring` sınıflarıyla yeniden hesaplayıp `IP5_S_yeniden.csv` dosyasını üretir (model indirme gerekir) / Recomputes the sincerity score with the classes in `src/scoring` and writes `IP5_S_yeniden.csv` (downloads models) |
-| `PAPER/verify_numbers.py` | Makalenin Sonuçlar bölümündeki türetilmiş değerleri bu CSV'den yeniden hesaplar / Recomputes the derived values reported in the Results section |
-| `config/config.yaml` | Raporlanan çalıştırmada kullanılan niyet mektubunu içerir / Contains the motivation letter used in the reported run |
+| `outputs/results/IP5_S_recomputed.csv` | Scored listing file for the 952 listings (raw and standardized M/S/R scores, `Final_Score`, `Fair_Score`, `Human_Score`, `Context_Score`) |
+| `outputs/results/IP5_final_fair_ranking.csv` | Score file of the earlier version; input to `recompute_sincerity.py` |
+| `PAPER/recompute_sincerity.py` | Recomputes the sincerity score with the classes in `src/scoring` and writes `IP5_S_recomputed.csv` (downloads models) |
+| `PAPER/verify_numbers.py` | Recomputes the derived values reported in the Results section of the paper |
+| `config/config.yaml` | Contains the motivation letter used in the reported run |
 
-Çalıştırma (proje kökünden) / Run from the repository root:
+Column glossary for the score files:
+
+| Column | Meaning |
+|---|---|
+| `link` | URL of the listing on the European Youth Portal |
+| `full_description` | Full listing description |
+| `extracted_skills` | Skills extracted from the description |
+| `M_Score_Raw`, `S_Score_Raw`, `R_Score_Raw` | Raw matching, sincerity and reliability scores |
+| `M_Score`, `S_Score`, `R_Score` | Standardized scores (z-score mapped to 0-100) |
+| `M_Score_Normalized`, `S_Score_Normalized`, `R_Score_Normalized` | Standardized scores as written by the earlier pipeline run (`recompute_sincerity.py` does not update `S_Score_Normalized`) |
+| `Final_Score` | Weighted sum of the standardized scores (F) |
+| `Fair_Score` | Final score after the keyword bonus (adjusted score A) |
+| `Human_Score`, `Context_Score` | Components of the sincerity score (S_human, S_context) |
+| `S_Score_Raw_old` | Raw sincerity score of the earlier version |
+
+Run from the repository root:
 
 ```bash
 pip install pandas scipy
-python PAPER/verify_numbers.py outputs/results/IP5_S_yeniden.csv
+python PAPER/verify_numbers.py outputs/results/IP5_S_recomputed.csv
 ```
 
-`IP5_S_yeniden.csv` dosyasını baştan üretmek için / To regenerate `IP5_S_yeniden.csv`:
+To regenerate `IP5_S_recomputed.csv`:
 
 ```bash
 pip install -r requirements.txt
 python PAPER/recompute_sincerity.py
 ```
 
-Özgeçmiş (CV) kişisel veri içerdiği için paylaşılmamaktadır. / The curriculum vitae is not shared because it contains personal data.
+The curriculum vitae is not shared because it contains personal data.

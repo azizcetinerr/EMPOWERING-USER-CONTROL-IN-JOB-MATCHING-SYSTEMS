@@ -1,5 +1,5 @@
 """
-Proje detay sayfalarından açıklamaları çeken modül
+Module that fetches descriptions from project detail pages
 """
 
 import requests
@@ -13,12 +13,12 @@ from ..utils.data_cleaner import clean_project_descriptions
 
 
 class ProjectDetailScraper:
-    """Proje detay sayfalarını çeken sınıf"""
+    """Class that fetches project detail pages"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
@@ -32,14 +32,14 @@ class ProjectDetailScraper:
     
     def extract_project_description(self, detail_url: str, retries: int = None) -> str:
         """
-        URL'den proje açıklamasını çıkarır.
+        Extracts the project description from a URL.
         
         Args:
-            detail_url: Proje detay URL'i
-            retries: Yeniden deneme sayısı (None ise config'den alır)
+            detail_url: Project detail URL
+            retries: Number of retries (if None, read from the config)
         
         Returns:
-            Proje açıklama metni
+            Project description text
         """
         if retries is None:
             retries = self.retry_count
@@ -60,63 +60,63 @@ class ProjectDetailScraper:
                         full_description_text += p.text.strip() + "\n\n"
                     break
             
-            return full_description_text.strip() if full_description_text else "AÇIKLAMA BULUNAMADI"
+            return full_description_text.strip() if full_description_text else "DESCRIPTION NOT FOUND"
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429 and retries > 0:
-                self.logger.warning(f"429 Hatası! {self.retry_delay} saniye bekleniyor... (URL: {detail_url})")
+                self.logger.warning(f"429 error! Waiting {self.retry_delay} seconds... (URL: {detail_url})")
                 time.sleep(self.retry_delay)
                 return self.extract_project_description(detail_url, retries - 1)
             else:
-                return f"HATA: {e.response.status_code} Hatası"
+                return f"ERROR: {e.response.status_code} error"
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Bağlantı hatası ({detail_url}): {e}")
-            return "HATA: Bağlantı Hatası"
+            self.logger.error(f"Connection error ({detail_url}): {e}")
+            return "ERROR: Connection error"
     
     def scrape_all_projects(self, links: List[str]) -> pd.DataFrame:
         """
-        Tüm proje linklerinden detayları çeker.
+        Fetches details from all project links.
         
         Args:
-            links: Proje link listesi
+            links: List of project links
         
         Returns:
-            Proje detayları DataFrame
+            Project details DataFrame
         """
-        self.logger.info(f"{len(links)} adet proje detayı çekiliyor...")
+        self.logger.info(f"Fetching {len(links)} project details...")
         
-        proje_verileri = []
-        basarisiz_linkler = 0
+        project_records = []
+        failed_links = 0
         
         for i, link in enumerate(links):
-            self.logger.info(f"İşleniyor... ({i+1}/{len(links)}) - {link}")
+            self.logger.info(f"Processing... ({i+1}/{len(links)}) - {link}")
             
             full_description = self.extract_project_description(link)
             
-            if "HATA" in full_description or "BULUNAMADI" in full_description:
-                self.logger.warning(f"Bu ilan atlanıyor: {link} (Sebep: {full_description[:50]}...)")
-                basarisiz_linkler += 1
+            if "ERROR" in full_description or "NOT FOUND" in full_description:
+                self.logger.warning(f"Skipping this listing: {link} (Reason: {full_description[:50]}...)")
+                failed_links += 1
             
-            proje_verileri.append({
+            project_records.append({
                 "link": link,
-                "tam_aciklama": full_description
+                "full_description": full_description
             })
             
             # Rate limiting
             time.sleep(self.request_delay)
             
-            # İlerleme raporu
+            # Progress report
             if (i + 1) % 50 == 0:
-                self.logger.info(f"İlerleme: {i+1}/{len(links)} proje işlendi")
+                self.logger.info(f"Progress: {i+1}/{len(links)} projects processed")
         
-        df_projeler = pd.DataFrame(proje_verileri)
+        df_projects = pd.DataFrame(project_records)
         
-        # Veri temizleme
-        df_projeler = clean_project_descriptions(df_projeler)
+        # Data cleaning
+        df_projects = clean_project_descriptions(df_projects)
         
-        self.logger.info(f"Toplam {len(df_projeler)} proje ilanı işlendi")
-        if basarisiz_linkler > 0:
-            self.logger.warning(f"{basarisiz_linkler} adet ilanın detay sayfası çekilemedi")
+        self.logger.info(f"{len(df_projects)} project listings processed in total")
+        if failed_links > 0:
+            self.logger.warning(f"Could not fetch the detail page of {failed_links} listings")
         
-        return df_projeler
+        return df_projects
 

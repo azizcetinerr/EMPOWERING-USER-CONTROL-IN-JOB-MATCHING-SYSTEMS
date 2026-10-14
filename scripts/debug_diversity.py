@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Diversity Score debug script'i
-Diversity Score'un neden 0.0 kaldığını analiz eder
+Analyzes why the Diversity Score stays at 0.0
 """
 
 import sys
@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Proje root'unu bul
+# Find the project root
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -24,25 +24,25 @@ def debug_diversity():
     print("🔍 DIVERSITY SCORE DEBUG")
     print("=" * 80)
     
-    # CSV yükle
-    csv_file = project_root / "outputs" / "results" / "IP5_Nihai_Adil_Siralama.csv"
+    # Load the CSV
+    csv_file = project_root / "outputs" / "results" / "IP5_final_fair_ranking.csv"
     if not csv_file.exists():
-        print(f"❌ CSV dosyası bulunamadı: {csv_file}")
+        print(f"❌ CSV file not found: {csv_file}")
         return
     
     df_ranked = pd.read_csv(csv_file)
-    print(f"✅ CSV yüklendi: {len(df_ranked)} proje")
+    print(f"✅ CSV loaded: {len(df_ranked)} projects")
     
-    # Vektörleri yükle
+    # Load the vectors
     vector_files = [
-        project_root / "data/processed/IP1_Ciktisi_Projeler_Vektorlu.pkl",
-        project_root / "outputs" / "processed" / "IP1_Ciktisi_Projeler_Vektorlu.pkl",
+        project_root / "data/processed/IP1_output_listings_vectorized.pkl",
+        project_root / "outputs" / "processed" / "IP1_output_listings_vectorized.pkl",
     ]
     
     vectors_loaded = False
     for vector_file in vector_files:
         if vector_file.exists():
-            print(f"\n📂 Vektörler yükleniyor: {vector_file}")
+            print(f"\n📂 Loading vectors: {vector_file}")
             try:
                 with open(vector_file, 'rb') as f:
                     vectors_data = pickle.load(f)
@@ -59,33 +59,33 @@ def debug_diversity():
                                 return v
                         return None
                     
-                    df_ranked['beceri_vektorleri'] = df_ranked['link'].apply(get_vector)
-                    vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                    print(f"✅ Vektörler yüklendi: {vectors_loaded_count}/{len(df_ranked)}")
+                    df_ranked['skill_vectors'] = df_ranked['link'].apply(get_vector)
+                    vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                    print(f"✅ Vectors loaded: {vectors_loaded_count}/{len(df_ranked)}")
                     vectors_loaded = True
                     break
                 elif isinstance(vectors_data, pd.DataFrame):
-                    if 'link' in vectors_data.columns and 'beceri_vektorleri' in vectors_data.columns:
+                    if 'link' in vectors_data.columns and 'skill_vectors' in vectors_data.columns:
                         df_ranked = df_ranked.merge(
-                            vectors_data[['link', 'beceri_vektorleri']],
+                            vectors_data[['link', 'skill_vectors']],
                             on='link',
                             how='left'
                         )
-                        vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                        print(f"✅ Vektörler yüklendi: {vectors_loaded_count}/{len(df_ranked)}")
+                        vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                        print(f"✅ Vectors loaded: {vectors_loaded_count}/{len(df_ranked)}")
                         vectors_loaded = True
                         break
             except Exception as e:
-                print(f"⚠️  Hata: {e}")
+                print(f"⚠️  Error: {e}")
                 continue
     
-    if not vectors_loaded or 'beceri_vektorleri' not in df_ranked.columns:
-        print("❌ Vektörler yüklenemedi!")
+    if not vectors_loaded or 'skill_vectors' not in df_ranked.columns:
+        print("❌ Could not load the vectors!")
         return
     
-    # Top-5 projeleri analiz et
+    # Analyze the top-5 projects
     top5 = df_ranked.head(5)
-    print(f"\n📊 TOP-5 PROJE ANALİZİ")
+    print(f"\n📊 TOP-5 PROJECT ANALYSIS")
     print("=" * 80)
     
     vectors_list = []
@@ -93,23 +93,23 @@ def debug_diversity():
     
     for idx, row in top5.iterrows():
         link = row.get('link', 'N/A')
-        vec = row.get('beceri_vektorleri')
+        vec = row.get('skill_vectors')
         
-        print(f"\nProje {idx}:")
+        print(f"\nProject {idx}:")
         print(f"  Link: {link[:60]}...")
-        print(f"  Adil_Skor: {row.get('Adil_Skor', 0):.2f}")
-        print(f"  Vektör: {type(vec)}")
+        print(f"  Fair_Score: {row.get('Fair_Score', 0):.2f}")
+        print(f"  Vector: {type(vec)}")
         
         if vec is None:
-            print("  ⚠️  Vektör YOK!")
+            print("  ⚠️  NO vector!")
             continue
         
         try:
             vec_array = np.array(vec)
-            print(f"  Vektör shape: {vec_array.shape}")
-            print(f"  Vektör dtype: {vec_array.dtype}")
-            print(f"  Vektör min/max: {vec_array.min():.4f} / {vec_array.max():.4f}")
-            print(f"  Vektör norm: {np.linalg.norm(vec_array):.4f}")
+            print(f"  Vector shape: {vec_array.shape}")
+            print(f"  Vector dtype: {vec_array.dtype}")
+            print(f"  Vector min/max: {vec_array.min():.4f} / {vec_array.max():.4f}")
+            print(f"  Vector norm: {np.linalg.norm(vec_array):.4f}")
             
             if vec_array.ndim > 1:
                 vec_array = vec_array.flatten()
@@ -120,34 +120,34 @@ def debug_diversity():
                 vec_normalized = vec_array / norm
                 vectors_list.append(vec_normalized)
                 valid_links.append(link)
-                print(f"  ✅ Normalize edildi (norm={norm:.4f})")
+                print(f"  ✅ Normalized (norm={norm:.4f})")
             else:
-                print(f"  ⚠️  Sıfır norm!")
+                print(f"  ⚠️  Zero norm!")
         except Exception as e:
-            print(f"  ❌ Hata: {e}")
+            print(f"  ❌ Error: {e}")
             import traceback
             print(traceback.format_exc()[:200])
     
-    print(f"\n📊 VEKTÖR BENZERLİK ANALİZİ")
+    print(f"\n📊 VECTOR SIMILARITY ANALYSIS")
     print("=" * 80)
-    print(f"Geçerli vektör sayısı: {len(vectors_list)}")
+    print(f"Number of valid vectors: {len(vectors_list)}")
     
     if len(vectors_list) < 2:
-        print("❌ Yeterli vektör yok (en az 2 gerekli)")
+        print("❌ Not enough vectors (at least 2 needed)")
         return
     
-    # Cosine similarity hesapla
+    # Compute cosine similarity
     try:
         vectors_matrix = np.vstack(vectors_list)
-        print(f"Vektör matrisi shape: {vectors_matrix.shape}")
+        print(f"Vector matrix shape: {vectors_matrix.shape}")
         
         similarity_matrix = cosine_similarity(vectors_matrix)
-        print(f"Benzerlik matrisi shape: {similarity_matrix.shape}")
+        print(f"Similarity matrix shape: {similarity_matrix.shape}")
         
-        # Diagonal'i 0 yap
+        # Set the diagonal to 0
         np.fill_diagonal(similarity_matrix, 0.0)
         
-        # Üst üçgen matris
+        # Upper triangular matrix
         mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
         similarities = similarity_matrix[mask]
         
@@ -157,8 +157,8 @@ def debug_diversity():
             max_sim = similarities.max()
             std_sim = similarities.std()
             
-            print(f"\nBenzerlik İstatistikleri:")
-            print(f"  Ortalama: {avg_sim:.6f}")
+            print(f"\nSimilarity statistics:")
+            print(f"  Mean: {avg_sim:.6f}")
             print(f"  Min: {min_sim:.6f}")
             print(f"  Max: {max_sim:.6f}")
             print(f"  Std: {std_sim:.6f}")
@@ -167,27 +167,27 @@ def debug_diversity():
             print(f"\nDiversity Score: {diversity:.6f}")
             
             if avg_sim > 0.999:
-                print("\n⚠️  ÇOK YÜKSEK BENZERLİK (>0.999)!")
-                print("   Projeler neredeyse aynı vektörlere sahip")
-                print("   Bu, projelerin gerçekten çok benzer olduğunu gösterir")
+                print("\n⚠️  VERY HIGH SIMILARITY (>0.999)!")
+                print("   The projects have almost identical vectors")
+                print("   This shows that the projects are really very similar")
             elif avg_sim > 0.99:
-                print("\n⚠️  Yüksek benzerlik (>0.99)")
+                print("\n⚠️  High similarity (>0.99)")
             elif avg_sim > 0.95:
-                print("\n⚠️  Benzerlik yüksek (>0.95)")
+                print("\n⚠️  Similarity is high (>0.95)")
             else:
-                print("\n✅ Normal benzerlik seviyesi")
+                print("\n✅ Normal similarity level")
             
-            # Pairwise benzerlikleri göster
-            print(f"\nPairwise Benzerlikler:")
+            # Show the pairwise similarities
+            print(f"\nPairwise similarities:")
             for i in range(len(vectors_list)):
                 for j in range(i+1, len(vectors_list)):
                     sim = similarity_matrix[i, j]
                     print(f"  {i} <-> {j}: {sim:.6f} (Link {i}: {valid_links[i][:30]}... <-> Link {j}: {valid_links[j][:30]}...)")
         else:
-            print("❌ Benzerlik hesaplanamadı")
+            print("❌ Could not compute the similarity")
             
     except Exception as e:
-        print(f"❌ Hata: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         print(traceback.format_exc())
 

@@ -1,4 +1,4 @@
 """
-Skorlama modülleri (M, S, R skorları)
+Scoring modules (M, S, R scores)
 """
 

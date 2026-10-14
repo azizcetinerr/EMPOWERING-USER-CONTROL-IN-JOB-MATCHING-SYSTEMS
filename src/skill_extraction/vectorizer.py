@@ -1,5 +1,5 @@
 """
-Becerileri vektörlere dönüştüren modül (XLM-RoBERTa)
+Module that converts skills into vectors (XLM-RoBERTa)
 """
 
 import torch
@@ -11,12 +11,12 @@ import logging
 
 
 class SkillVectorizer:
-    """Beceri vektörizasyon sınıfı"""
+    """Skill vectorization class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
@@ -26,7 +26,7 @@ class SkillVectorizer:
         self.model_name = model_config.get('model_name', 'xlm-roberta-base')
         self.batch_size = model_config.get('batch_size', 32)
         
-        # Cihaz belirleme
+        # Device selection
         device_str = model_config.get('device', 'auto')
         if device_str == 'auto':
             if torch.backends.mps.is_available():
@@ -38,50 +38,50 @@ class SkillVectorizer:
         else:
             self.device = torch.device(device_str)
         
-        self.logger.info(f"Kullanılan cihaz: {self.device}")
+        self.logger.info(f"Using device: {self.device}")
         
-        # Modeli yükle
+        # Load the model
         try:
-            self.logger.info(f"Model yükleniyor: {self.model_name}...")
+            self.logger.info(f"Loading model: {self.model_name}...")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.model = AutoModel.from_pretrained(self.model_name).to(self.device)
             self.model.eval()
             
-            # Torch compile optimizasyonu (PyTorch 2.0+)
+            # Torch compile optimization (PyTorch 2.0+)
             try:
                 if hasattr(torch, 'compile') and self.config.get('performance', {}).get('use_torch_compile', False):
-                    self.logger.info("Torch compile optimizasyonu uygulanıyor...")
+                    self.logger.info("Applying Torch compile optimization...")
                     self.model = torch.compile(self.model, mode='reduce-overhead')
-                    self.logger.info("✅ Torch compile aktif")
+                    self.logger.info("✅ Torch compile active")
             except Exception as e:
-                self.logger.debug(f"Torch compile uygulanamadı (normal): {e}")
+                self.logger.debug(f"Torch compile could not be applied (expected): {e}")
             
-            self.logger.info("Model başarıyla yüklendi")
+            self.logger.info("Model loaded successfully")
         except Exception as e:
-            self.logger.error(f"Model yüklenirken hata: {e}")
+            self.logger.error(f"Error while loading model: {e}")
             raise
     
     def vectorize_skills(self, skills: Union[List[str], List[List[str]]]) -> np.ndarray:
         """
-        Beceri listesini vektörlere dönüştürür.
+        Converts a skill list into vectors.
         
         Args:
-            skills: Beceri listesi veya beceri listelerinin listesi
+            skills: List of skills, or a list of skill lists
         
         Returns:
-            Vektör matrisi (numpy array)
+            Vector matrix (numpy array)
         """
         if not skills or len(skills) == 0:
-            return np.zeros((1, 768))  # XLM-R-base boyutu
+            return np.zeros((1, 768))  # XLM-R-base dimension
         
-        # Eğer iç içe liste ise (her proje için beceri listesi)
+        # If it is a nested list (one skill list per project)
         if isinstance(skills[0], list):
-            # Her proje için becerileri birleştir
+            # Join the skills of each project
             skill_texts = [' '.join(skill_list) if skill_list else '' for skill_list in skills]
         else:
             skill_texts = skills
         
-        # Batch işleme
+        # Batch processing
         all_embeddings = []
         
         for i in range(0, len(skill_texts), self.batch_size):
@@ -97,25 +97,25 @@ class SkillVectorizer:
                 ).to(self.device)
                 
                 outputs = self.model(**inputs)
-                # Ortalama pooling
+                # Mean pooling
                 embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
                 all_embeddings.append(embeddings)
         
         result = np.vstack(all_embeddings)
         return result
     
-    def vectorize_dataframe(self, df: pd.DataFrame, skill_column: str = "cikarilan_beceriler") -> pd.DataFrame:
+    def vectorize_dataframe(self, df: pd.DataFrame, skill_column: str = "extracted_skills") -> pd.DataFrame:
         """
-        DataFrame'deki beceri listelerini vektörlere dönüştürür.
+        Converts the skill lists in a DataFrame into vectors.
         
         Args:
-            df: İşlenecek DataFrame
-            skill_column: Beceri listesi sütunu adı
+            df: DataFrame to process
+            skill_column: Name of the skill list column
         
         Returns:
-            Vektörler eklenmiş DataFrame
+            DataFrame with vectors added
         """
-        self.logger.info(f"{len(df)} adet proje vektörize ediliyor...")
+        self.logger.info(f"Vectorizing {len(df)} projects...")
         
         skill_lists = df[skill_column].tolist()
         vectors = []
@@ -128,8 +128,8 @@ class SkillVectorizer:
                 vectors.append(vec)
         
         df_result = df.copy()
-        df_result["beceri_vektorleri"] = vectors
+        df_result["skill_vectors"] = vectors
         
-        self.logger.info("Tüm projeler vektörize edildi")
+        self.logger.info("All projects vectorized")
         return df_result
 

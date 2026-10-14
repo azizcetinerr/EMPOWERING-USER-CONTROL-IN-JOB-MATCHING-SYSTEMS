@@ -1,4 +1,4 @@
 """
-Yardımcı fonksiyonlar ve araçlar
+Utility functions and tools
 """
 

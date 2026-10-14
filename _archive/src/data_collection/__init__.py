@@ -1,4 +1,4 @@
 """
-Veri toplama modülleri (Web scraping, CV parsing)
+Data collection modules (web scraping, CV parsing)
 """
 

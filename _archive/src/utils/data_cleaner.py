@@ -1,5 +1,5 @@
 """
-Veri temizleme ve ön işleme fonksiyonları
+Data cleaning and preprocessing functions
 """
 
 import pandas as pd
@@ -9,15 +9,15 @@ import re
 
 def remove_duplicate_links(links: List[str]) -> List[str]:
     """
-    Tekrar eden linkleri kaldırır ve sıralar.
+    Removes duplicate links and sorts them.
     
     Args:
-        links: Link listesi
+        links: List of links
     
     Returns:
-        Tekrarsız link listesi
+        List of unique links
     """
-    unique_links = list(dict.fromkeys(links))  # Sırayı koruyarak tekrarları kaldır
+    unique_links = list(dict.fromkeys(links))  # Remove duplicates while preserving order
     return unique_links
 
 
@@ -27,15 +27,15 @@ def filter_skills(
     stopwords: Set[str] = None
 ) -> List[str]:
     """
-    Beceri listesini filtreler.
+    Filters a skill list.
     
     Args:
-        skills: Ham beceri listesi
-        min_length: Minimum karakter uzunluğu
-        stopwords: Filtrelenecek kelimeler
+        skills: Raw skill list
+        min_length: Minimum length in characters
+        stopwords: Words to filter out
     
     Returns:
-        Filtrelenmiş beceri listesi
+        Filtered skill list
     """
     if stopwords is None:
         stopwords = {"com", "lo", "e", "m", "km", "a", "i", "o", "u"}
@@ -44,41 +44,41 @@ def filter_skills(
     for skill in skills:
         skill_lower = skill.lower().strip()
         
-        # Minimum uzunluk kontrolü
+        # Minimum length check
         if len(skill_lower) < min_length:
             continue
         
-        # Stopword kontrolü
+        # Stopword check
         if skill_lower in stopwords:
             continue
         
-        # Sadece harf içeren beceriler (opsiyonel - sayısal beceriler için kaldırılabilir)
+        # Keep only skills that contain letters (optional - can be removed for numeric skills)
         # if not re.search(r'[a-zA-Z]', skill_lower):
         #     continue
         
         filtered.append(skill)
     
-    return list(set(filtered))  # Tekrarları kaldır
+    return list(set(filtered))  # Remove duplicates
 
 
-def clean_project_descriptions(df: pd.DataFrame, description_col: str = "tam_aciklama") -> pd.DataFrame:
+def clean_project_descriptions(df: pd.DataFrame, description_col: str = "full_description") -> pd.DataFrame:
     """
-    Proje açıklamalarını temizler.
+    Cleans project descriptions.
     
     Args:
-        df: Proje verisi DataFrame
-        description_col: Açıklama sütunu adı
+        df: Project data DataFrame
+        description_col: Name of the description column
     
     Returns:
-        Temizlenmiş DataFrame
+        Cleaned DataFrame
     """
     df_clean = df.copy()
     
-    # Boş açıklamaları kaldır
+    # Remove empty descriptions
     df_clean = df_clean[df_clean[description_col].notna()]
     df_clean = df_clean[df_clean[description_col].str.strip() != ""]
     
-    # Fazla boşlukları temizle
+    # Remove extra whitespace
     df_clean[description_col] = df_clean[description_col].str.replace(r'\s+', ' ', regex=True)
     
     return df_clean.reset_index(drop=True)
@@ -86,29 +86,29 @@ def clean_project_descriptions(df: pd.DataFrame, description_col: str = "tam_aci
 
 def normalize_skill_name(skill: str) -> str:
     """
-    Beceri adını normalize eder (küçük harf, boşluk temizleme).
+    Normalizes a skill name (lower case, whitespace cleanup).
     
     Args:
-        skill: Ham beceri adı
+        skill: Raw skill name
     
     Returns:
-        Normalize edilmiş beceri adı
+        Normalized skill name
     """
     normalized = skill.lower().strip()
-    normalized = re.sub(r'\s+', ' ', normalized)  # Fazla boşlukları temizle
+    normalized = re.sub(r'\s+', ' ', normalized)  # Remove extra whitespace
     return normalized
 
 
 def validate_data_quality(df: pd.DataFrame, required_columns: List[str]) -> Dict[str, Any]:
     """
-    Veri kalitesi kontrolü yapar.
+    Runs a data quality check.
     
     Args:
-        df: Kontrol edilecek DataFrame
-        required_columns: Gerekli sütunlar
+        df: DataFrame to check
+        required_columns: Required columns
     
     Returns:
-        Kalite raporu sözlüğü
+        Quality report dictionary
     """
     report = {
         "total_rows": len(df),
@@ -117,7 +117,7 @@ def validate_data_quality(df: pd.DataFrame, required_columns: List[str]) -> Dict
         "duplicates": 0
     }
     
-    # Eksik sütun kontrolü
+    # Missing column check
     for col in required_columns:
         if col not in df.columns:
             report["missing_columns"].append(col)
@@ -125,7 +125,7 @@ def validate_data_quality(df: pd.DataFrame, required_columns: List[str]) -> Dict
             empty_count = df[col].isna().sum() + (df[col].astype(str).str.strip() == "").sum()
             report["empty_rows"][col] = empty_count
     
-    # Duplicate kontrolü
+    # Duplicate check
     if "link" in df.columns:
         report["duplicates"] = df["link"].duplicated().sum()
     

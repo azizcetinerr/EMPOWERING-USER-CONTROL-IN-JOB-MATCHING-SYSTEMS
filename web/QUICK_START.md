@@ -1,78 +1,78 @@
-# Hızlı Başlangıç Kılavuzu
+# Quick Start Guide
 
-## Durum Kontrolü
+## Status Check
 
-Uygulama başladığında şu mesajları görürsünüz:
+When the application starts, you will see these messages:
 
-### ✅ Hızlı Mod (Önerilen)
+### ✅ Fast mode (recommended)
 ```
-✅ IP1 çıktıları bulundu - Hızlı mod aktif
-   (Proje scraping'i atlanacak, sadece CV analizi yapılacak)
-```
-
-### ⚠️ Yavaş Mod (İlk Çalıştırma)
-```
-⚠️  IP1 çıktıları bulunamadı - Yavaş mod
-   (İlk analiz uzun sürebilir, proje verileri toplanacak)
+✅ IP1 outputs found - fast mode active
+   (Project scraping will be skipped, only the CV analysis will run)
 ```
 
-## Hızlı Mod İçin IP1 Çıktılarını Oluşturma
+### ⚠️ Slow mode (first run)
+```
+⚠️  IP1 outputs not found - slow mode
+   (The first analysis may take long; project data will be collected)
+```
 
-### Yöntem 1: Pipeline ile (Önerilen)
+## Creating the IP1 Outputs for Fast Mode
 
-1. Terminal'de proje kök dizinine gidin:
+### Method 1: With the pipeline (recommended)
+
+1. Go to the project root directory in the terminal:
 ```bash
-cd /Users/acetiner/Desktop/Tubitak_Proje/Tubitak_Proje_Yeni
+cd /path/to/EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS
 ```
 
-2. Pipeline'ı çalıştırın (bir kez):
+2. Run the pipeline (once):
 ```bash
 python src/pipeline.py
 ```
 
-Bu komut:
-- Proje verilerini toplar (~5-10 dakika)
-- Becerileri çıkarır
-- Vektörleri hesaplar
-- `IP1_Ciktisi_Projeler_Becerili.pkl` dosyasını oluşturur
+This command:
+- Collects the project data (~5-10 minutes)
+- Extracts the skills
+- Computes the vectors
+- Creates the `IP1_output_listings_with_skills.pkl` file
 
-3. Web uygulamasını yeniden başlatın:
+3. Restart the web application:
 ```bash
 python web/app.py
 ```
 
-Artık "Hızlı mod aktif" mesajını göreceksiniz!
+You will now see the "fast mode active" message!
 
-### Yöntem 2: Web Arayüzünden (İlk Analiz)
+### Method 2: From the web interface (first analysis)
 
-1. Web arayüzünü açın: `http://localhost:5001`
-2. CV linkinizi girin
-3. İlk analiz uzun sürebilir (~10-15 dakika) ama IP1 çıktıları oluşturulacak
-4. Sonraki analizler çok daha hızlı olacak (~2-3 dakika)
+1. Open the web interface: `http://localhost:5001`
+2. Enter your CV link
+3. The first analysis may take long (~10-15 minutes) but the IP1 outputs will be created
+4. Subsequent analyses will be much faster (~2-3 minutes)
 
-## Performans Karşılaştırması
+## Performance Comparison
 
-| Durum | İlk Analiz | Sonraki Analizler |
+| Mode | First analysis | Subsequent analyses |
 |-------|------------|-------------------|
-| **Yavaş Mod** | ~10-15 dakika | ~2-3 dakika |
-| **Hızlı Mod** | ~2-3 dakika | ~1-2 dakika |
+| **Slow mode** | ~10-15 minutes | ~2-3 minutes |
+| **Fast mode** | ~2-3 minutes | ~1-2 minutes |
 
-## İpuçları
+## Tips
 
-1. **İlk kez kullanıyorsanız**: Pipeline'ı bir kez çalıştırın, sonra web arayüzünü kullanın
-2. **Sadece CV analizi yapmak istiyorsanız**: Web arayüzünden devam edin (ilk analiz uzun sürer)
-3. **Proje listesi güncellendi**: Önbellek otomatik olarak güncellenecek, sadece yeni projeler scrape edilecek
+1. **If you are using it for the first time**: run the pipeline once, then use the web interface
+2. **If you only want a CV analysis**: continue from the web interface (the first analysis takes long)
+3. **The project list was updated**: the cache is updated automatically and only new projects are scraped
 
-## Sorun Giderme
+## Troubleshooting
 
-**"IP1 çıktıları bulunamadı" mesajı görüyorum:**
-- Normal, ilk çalıştırmada bu mesaj görünür
-- İlk analiz uzun sürebilir ama sonraki analizler hızlı olacak
+**I see the "IP1 outputs not found" message:**
+- Normal; this message appears on the first run
+- The first analysis may take long but subsequent analyses will be fast
 
-**"Modeller yükleniyor" çok uzun sürüyor:**
-- İlk kez model indiriliyor (internet bağlantısına bağlı)
-- Sonraki başlatmalarda çok daha hızlı olacak
+**"Loading models" takes very long:**
+- The model is being downloaded for the first time (depends on the internet connection)
+- It will be much faster on subsequent starts
 
-**Analiz çok uzun sürüyor:**
-- İlk analiz: Normal (~10-15 dakika)
-- Sonraki analizler: Çok daha hızlı (~2-3 dakika)
+**The analysis takes very long:**
+- First analysis: normal (~10-15 minutes)
+- Subsequent analyses: much faster (~2-3 minutes)

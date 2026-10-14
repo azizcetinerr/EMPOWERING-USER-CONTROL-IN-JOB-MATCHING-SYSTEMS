@@ -1,0 +1,99 @@
+📁 EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
+│
+├── 📄 README.md                    # General project documentation
+├── 📄 INSTALLATION.md                   # Installation and usage guide
+├── 📄 DEVELOPMENT_NOTES.md        # Improvements made
+├── 📄 requirements.txt             # Python dependencies
+├── 📄 .gitignore                   # Git ignore file
+│
+├── 📁 config/                      # ⚙️ CONFIGURATION
+│   └── config.yaml                # All system settings (URLs, model names, weights)
+│
+├── 📁 src/                         # 💻 SOURCE CODE
+│   │
+│   ├── 📄 pipeline.py              # 🚀 MAIN PIPELINE (runs all steps)
+│   │
+│   ├── 📁 data_collection/         # 📥 DATA COLLECTION
+│   │   ├── youth_portal_scraper.py      # Fetches the project links from the Youth Portal
+│   │   ├── project_detail_scraper.py    # Fetches the detail page of each project
+│   │   └── cv_parser.py                 # Parses the Europass CV
+│   │
+│   ├── 📁 skill_extraction/        # 🔍 SKILL EXTRACTION
+│   │   ├── skill_extractor.py           # Extracts skills with SkillNER
+│   │   └── vectorizer.py               # Vectorization with XLM-RoBERTa
+│   │
+│   ├── 📁 scoring/                 # 📊 SCORING
+│   │   ├── matching_score.py            # M-Score: matching score
+│   │   ├── sincerity_score.py           # S-Score: sincerity score (NLP analysis, cliché detection, sentiment)
+│   │   ├── reliability_score.py         # R-Score: reliability score (project-specific, organization information)
+│   │   └── final_ranking.py            # Final fair ranking (Z-Score normalization, MOO)
+│   │
+│   └── 📁 utils/                   # 🛠️ UTILITY FUNCTIONS
+│       ├── config_loader.py             # Loads the config file
+│       ├── logger.py                     # Logging system
+│       └── data_cleaner.py                # Data cleaning functions
+│
+├── 📁 outputs/                     # 📤 OUTPUT FILES
+│   ├── raw/                        # Raw data
+│   ├── processed/                  # Processed data (.pkl, .npy)
+│   └── results/                    # Results (.csv, .png)
+│
+└── 📁 logs/                        # 📝 LOG FILES
+    └── project.log                 # System logs
+
+═══════════════════════════════════════════════════════════════════
+
+📊 PROCESSING FLOW (pipeline):
+
+1️⃣  IP1: Data collection and standardization
+    ├── Fetch the project links from the Youth Portal
+    ├── Fetch the detail page of each project
+    ├── Parse the CV
+    ├── Extract skills with SkillNER
+    └── Vectorize with XLM-RoBERTa
+
+2️⃣  IP2: Matching score (M-Score)
+    └── Skill matching with cosine similarity
+
+3️⃣  IP3: Sincerity score (S-Score)
+    ├── Motivation letter analysis with AI detection
+    ├── Contextual similarity computation
+    ├── Cliché detection and penalty
+    ├── Specific detail bonus (dates, budget, number of participants)
+    ├── Sentiment analysis (subjectivity, robotic language)
+    └── Wide score range with sigmoid normalization
+
+4️⃣  IP4: Reliability score (R-Score)
+    ├── CV verification with an NLI model
+    ├── A separate R score for each project
+    ├── Bonus/penalty from the organization information (project count, verification status)
+    └── Missing data penalty
+
+5️⃣  IP5: Fair ranking
+    ├── Z-Score normalization (all scores on a balanced scale)
+    ├── Multi-objective optimization (MOO)
+    ├── Fairness bonus
+    └── Saving the raw and normalized scores
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 USAGE:
+
+Simple usage:
+    python src/pipeline.py
+
+In Python:
+    from src.pipeline import ProjectPipeline
+    pipeline = ProjectPipeline()
+    df_final = pipeline.run_full_pipeline()
+
+═══════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+- README.md           → General project information
+- INSTALLATION.md          → Detailed installation guide
+- DEVELOPMENT_NOTES.md → Improvement details
+- config/config.yaml  → All settings
+
+═══════════════════════════════════════════════════════════════════

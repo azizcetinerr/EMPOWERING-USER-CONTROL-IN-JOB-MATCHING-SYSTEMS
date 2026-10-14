@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İŞ EŞLEŞTİRME SİSTEMLERİNDE KULLANICI KONTROLÜNÜN GÜÇLENDİRİLMESİ</title>
+    <title>EMPOWERING USER CONTROL IN JOB MATCHING SYSTEMS</title>
     <style>
         * {
             margin: 0;
@@ -247,12 +247,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎯 CV Eşleştirme Sistemi</h1>
-        <p class="subtitle">Europass CV linkinizi girin, size en uygun projeleri bulalım</p>
+        <h1>🎯 CV Matching System</h1>
+        <p class="subtitle">Enter your Europass CV link and we will find the projects that suit you best</p>
 
         <form id="cvForm">
             <div class="form-group">
-                <label for="cvUrl">Europass CV Linki</label>
+                <label for="cvUrl">Europass CV link</label>
                 <input 
                     type="url" 
                     id="cvUrl" 
@@ -261,14 +261,14 @@
                     required
                 >
                 <div class="help-text">
-                    Europass CV'nizin paylaşım linkini buraya yapıştırın.
+                    Paste the sharing link of your Europass CV here.
                     <br>
-                    <a href="#" class="example-link" onclick="fillExample(); return false;">Örnek link formatı</a>
+                    <a href="#" class="example-link" onclick="fillExample(); return false;">Example link format</a>
                 </div>
             </div>
 
             <button type="submit" class="btn" id="submitBtn">
-                Analiz Et
+                Analyze
             </button>
         </form>
 
@@ -279,8 +279,8 @@
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill">0%</div>
             </div>
-            <div class="progress-message" id="progressMessage">Hazırlanıyor...</div>
-            <div class="progress-time" id="progressTime">Geçen süre: 0 saniye</div>
+            <div class="progress-message" id="progressMessage">Preparing...</div>
+            <div class="progress-time" id="progressTime">Elapsed time: 0 seconds</div>
         </div>
     </div>
 
@@ -297,7 +297,7 @@
         let statusInterval = null;
         let timeInterval = null;
         let startTime = null;
-        const MAX_WAIT_TIME = 60 * 60 * 1000; // 60 dakika (milisaniye) - Model yükleme ve büyük veri setleri için artırıldı
+        const MAX_WAIT_TIME = 60 * 60 * 1000; // 60 minutes (milliseconds) - increased for model loading and large data sets
 
         function fillExample() {
             document.getElementById('cvUrl').value = 'https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/example/12345678-1234-1234-1234-123456789012?view=html';
@@ -309,7 +309,7 @@
             successMessage.classList.remove('active');
             setTimeout(() => {
                 errorMessage.classList.remove('active');
-            }, 10000); // 10 saniye göster
+            }, 10000); // Show for 10 seconds
         }
 
         function showSuccess(message) {
@@ -328,15 +328,15 @@
         function updateElapsedTime() {
             if (!startTime) return;
             
-            const elapsed = Math.floor((Date.now() - startTime) / 1000); // saniye cinsinden
+            const elapsed = Math.floor((Date.now() - startTime) / 1000); // in seconds
             const minutes = Math.floor(elapsed / 60);
             const seconds = elapsed % 60;
             
             let timeText = '';
             if (minutes > 0) {
-                timeText = `Geçen süre: ${minutes} dakika ${seconds} saniye`;
+                timeText = `Elapsed time: ${minutes} minutes ${seconds} seconds`;
             } else {
-                timeText = `Geçen süre: ${seconds} saniye`;
+                timeText = `Elapsed time: ${seconds} seconds`;
             }
             
             progressTime.textContent = timeText;
@@ -352,7 +352,7 @@
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(title, {
                     body: message,
-                    icon: '/static/favicon.ico', // İsterseniz icon ekleyebilirsiniz
+                    icon: '/static/favicon.ico', // You can add an icon if you like
                     badge: '/static/favicon.ico',
                     tag: 'cv-analysis',
                     requireInteraction: false
@@ -363,7 +363,7 @@
         function checkStatus() {
             if (!sessionId) return;
 
-            // Timeout kontrolü
+            // Timeout check
             if (startTime && (Date.now() - startTime) > MAX_WAIT_TIME) {
                 if (statusInterval) {
                     clearInterval(statusInterval);
@@ -374,8 +374,8 @@
                     timeInterval = null;
                 }
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Analiz Et';
-                showError('Analiz çok uzun sürdü (60 dakika). Lütfen sayfayı yenileyip tekrar deneyin veya sistem yöneticisine başvurun.');
+                submitBtn.innerHTML = 'Analyze';
+                showError('The analysis took too long (60 minutes). Please refresh the page and try again, or contact the system administrator.');
                 progressContainer.classList.remove('active');
                 return;
             }
@@ -391,7 +391,7 @@
                     updateProgress(data.progress, data.message);
 
                     if (data.status === 'completed') {
-                        // Interval'leri temizle ve null yap (tekrar başlamasın)
+                        // Clear the intervals and set them to null (so they do not restart)
                         if (statusInterval) {
                             clearInterval(statusInterval);
                             statusInterval = null;
@@ -401,29 +401,29 @@
                             timeInterval = null;
                         }
                         
-                        // Final zamanı göster
+                        // Show the final time
                         const elapsed = Math.floor((Date.now() - startTime) / 1000);
                         const minutes = Math.floor(elapsed / 60);
                         const seconds = elapsed % 60;
                         const timeText = minutes > 0 
-                            ? `${minutes} dakika ${seconds} saniye` 
-                            : `${seconds} saniye`;
+                            ? `${minutes} minutes ${seconds} seconds`
+                            : `${seconds} seconds`;
                         
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Analiz Et';
-                        showSuccess(`Analiz tamamlandı! (${timeText}) Sonuçlar yükleniyor...`);
+                        submitBtn.innerHTML = 'Analyze';
+                        showSuccess(`Analysis completed! (${timeText}) Loading the results...`);
                         
-                        // Bildirim gönder
+                        // Send a notification
                         showNotification(
-                            'CV Analizi Tamamlandı! 🎉',
-                            `Analiz ${timeText} sürede tamamlandı. Sonuçları görmek için tıklayın.`
+                            'CV analysis completed! 🎉',
+                            `The analysis completed in ${timeText}. Click to see the results.`
                         );
                         
                         setTimeout(() => {
                             window.location.href = `/results/${sessionId}`;
                         }, 1500);
                     } else if (data.status === 'error') {
-                        // Interval'leri temizle ve null yap (tekrar başlamasın)
+                        // Clear the intervals and set them to null (so they do not restart)
                         if (statusInterval) {
                             clearInterval(statusInterval);
                             statusInterval = null;
@@ -433,22 +433,22 @@
                             timeInterval = null;
                         }
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Analiz Et';
-                        showError(data.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                        submitBtn.innerHTML = 'Analyze';
+                        showError(data.message || 'An error occurred. Please try again.');
                         progressContainer.classList.remove('active');
                         
-                        // Hata bildirimi
+                        // Error notification
                         showNotification(
-                            'CV Analizi Hatası ❌',
-                            data.message || 'Bir hata oluştu. Lütfen tekrar deneyin.'
+                            'CV analysis error ❌',
+                            data.message || 'An error occurred. Please try again.'
                         );
                     }
-                    // Eğer status hala 'processing' veya 'queued' ise devam et
+                    // If the status is still 'processing' or 'queued', continue
                 })
                 .catch(error => {
                     console.error('Status check error:', error);
-                    // Hata durumunda da devam et, belki geçici bir sorundur
-                    // Ama çok fazla hata olursa durdur
+                    // Also continue on error, it may be a temporary problem
+                    // But stop if there are too many errors
                 });
         }
 
@@ -458,16 +458,16 @@
             const cvUrl = document.getElementById('cvUrl').value.trim();
             
             if (!cvUrl) {
-                showError('Lütfen bir CV linki girin');
+                showError('Please enter a CV link');
                 return;
             }
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="loading-spinner"></span>Gönderiliyor...';
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Sending...';
             errorMessage.classList.remove('active');
             successMessage.classList.remove('active');
             progressContainer.classList.add('active');
-            updateProgress(0, 'İstek gönderiliyor...');
+            updateProgress(0, 'Sending the request...');
 
             try {
                 const response = await fetch('/submit', {
@@ -482,33 +482,33 @@
 
                 if (response.ok) {
                     sessionId = data.session_id;
-                    startTime = Date.now(); // Başlangıç zamanını kaydet
-                    showSuccess('CV analizi başlatıldı! Arka planda çalışıyor...');
+                    startTime = Date.now(); // Record the start time
+                    showSuccess('CV analysis started! Running in the background...');
                     
-                    // Bildirim izni iste
+                    // Ask for notification permission
                     requestNotificationPermission();
                     
-                    // Durum kontrolünü başlat (her 3 saniyede bir - daha hızlı güncelleme)
+                    // Start the status check (every 3 seconds - faster updates)
                     statusInterval = setInterval(checkStatus, 3000);
-                    checkStatus(); // İlk kontrolü hemen yap
+                    checkStatus(); // Run the first check immediately
                     
-                    // Zamanlayıcıyı başlat (her saniye güncelle)
+                    // Start the timer (update every second)
                     timeInterval = setInterval(updateElapsedTime, 1000);
-                    updateElapsedTime(); // İlk güncellemeyi hemen yap
+                    updateElapsedTime(); // Run the first update immediately
                     
-                    // Başlangıç bildirimi
+                    // Start notification
                     showNotification(
-                        'CV Analizi Başlatıldı 🚀',
-                        'Analiz arka planda çalışıyor. Tamamlandığında bildirim alacaksınız.'
+                        'CV analysis started 🚀',
+                        'The analysis is running in the background. You will be notified when it completes.'
                     );
                 } else {
-                    throw new Error(data.error || 'Bir hata oluştu');
+                    throw new Error(data.error || 'An error occurred');
                 }
             } catch (error) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Analiz Et';
+                submitBtn.innerHTML = 'Analyze';
                 progressContainer.classList.remove('active');
-                showError(error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                showError(error.message || 'An error occurred. Please try again.');
             }
         });
     </script>

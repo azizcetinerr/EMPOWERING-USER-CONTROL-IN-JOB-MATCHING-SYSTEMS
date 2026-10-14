@@ -63,10 +63,10 @@ Thumbs.db
 .env
 .env.local
 
-# Model cache (optional - büyük dosyalar)
+# Model cache (optional - large files)
 .cache/
 models/
 
-# Makale (fairpass_v2) yeniden uretilebilirlik dosyalari
-!outputs/results/IP5_S_yeniden.csv
-!outputs/results/IP5_Nihai_Adil_Siralama.csv
+# Paper (fairpass_v2) reproducibility files
+!outputs/results/IP5_S_recomputed.csv
+!outputs/results/IP5_final_fair_ranking.csv

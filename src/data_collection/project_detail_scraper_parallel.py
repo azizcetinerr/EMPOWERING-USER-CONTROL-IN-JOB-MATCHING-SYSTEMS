@@ -1,5 +1,5 @@
 """
-Paralel proje detay sayfalarından açıklamaları çeken modül (Hızlı versiyon)
+Module that fetches descriptions from project detail pages in parallel (fast version)
 """
 
 import requests
@@ -15,14 +15,14 @@ from ..utils.data_cleaner import clean_project_descriptions
 
 
 class ProjectDetailScraperParallel:
-    """Paralel proje detay sayfalarını çeken sınıf (Hızlı versiyon)"""
+    """Class that fetches project detail pages in parallel (fast version)"""
     
     def __init__(self, config: dict, logger: logging.Logger = None, max_workers: int = 4):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
-            max_workers: Paralel çalışacak thread sayısı (varsayılan: 4, optimize edildi)
+            max_workers: Number of parallel threads (default: 4, optimized)
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
@@ -31,10 +31,10 @@ class ProjectDetailScraperParallel:
         scraping_config = config.get('scraping', {}).get('requests', {})
         self.retry_count = scraping_config.get('retry_count', 5)
         self.retry_delay = scraping_config.get('retry_delay', 10)
-        self.request_delay = scraping_config.get('request_delay', 1.0)  # Adaptive olacak
-        self.base_delay = 1.0  # Başlangıç delay
+        self.request_delay = scraping_config.get('request_delay', 1.0)  # Will be adaptive
+        self.base_delay = 1.0  # Initial delay
         self.timeout = scraping_config.get('timeout', 30)
-        self.max_retry_delay = 30  # Maksimum bekleme süresi (429 hatası için)
+        self.max_retry_delay = 30  # Maximum wait time (for 429 errors)
         
         # Adaptive rate limiting
         self.consecutive_successes = 0
@@ -43,14 +43,14 @@ class ProjectDetailScraperParallel:
     
     def extract_project_info(self, detail_url: str, retries: int = None) -> Dict:
         """
-        Proje detay sayfasından bilgileri çıkarır (rate limiting ile).
+        Extracts information from a project detail page (with rate limiting).
         
         Args:
-            detail_url: Proje detay sayfası URL'i
-            retries: Tekrar deneme sayısı (None ise config'den alınır)
+            detail_url: Project detail page URL
+            retries: Number of retries (if None, read from the config)
         
         Returns:
-            Proje bilgileri sözlüğü
+            Project information dictionary
         """
         if retries is None:
             retries = self.retry_count
@@ -68,46 +68,46 @@ class ProjectDetailScraperParallel:
                     }
                 )
                 
-                # 429 hatası kontrolü
+                # 429 error check
                 if response.status_code == 429:
                     retry_after = int(response.headers.get('Retry-After', 10))
                     wait_time = min(retry_after, self.max_retry_delay)
-                    self.logger.warning(f"Rate limit (429)! {wait_time} saniye bekleniyor...")
+                    self.logger.warning(f"Rate limit (429)! Waiting {wait_time} seconds...")
                     self.consecutive_429_errors += 1
                     self.consecutive_successes = 0
-                    # Delay'i artır
+                    # Increase the delay
                     self.current_delay = min(self.current_delay * 1.5, 5.0)
                     time.sleep(wait_time)
                     continue
                 
                 response.raise_for_status()
                 
-                # Başarılı istek - delay'i azalt (adaptive)
+                # Successful request - decrease the delay (adaptive)
                 self.consecutive_successes += 1
                 self.consecutive_429_errors = 0
                 if self.consecutive_successes > 10:
-                    # 10 başarılı istekten sonra delay'i azalt
+                    # Decrease the delay after 10 successful requests
                     self.current_delay = max(self.current_delay * 0.9, self.base_delay)
                     self.consecutive_successes = 0
                 
                 soup = BeautifulSoup(response.content, 'html.parser')
                 
-                # Tam açıklama
+                # Full description
                 description_elements = soup.find_all(['p', 'div'], class_=lambda x: x and ('description' in str(x).lower() or 'content' in str(x).lower()))
                 full_description = ' '.join([elem.get_text(strip=True) for elem in description_elements if elem.get_text(strip=True)])
                 
                 if not full_description:
-                    # Alternatif: tüm paragraf etiketlerini al
+                    # Alternative: take all paragraph tags
                     paragraphs = soup.find_all('p')
                     full_description = ' '.join([p.get_text(strip=True) for p in paragraphs if len(p.get_text(strip=True)) > 20])
                 
-                # Organizasyon bilgileri
+                # Organization information
                 org_name = None
                 verified = False
                 address = None
                 website = None
                 
-                # Organizasyon adı
+                # Organization name
                 org_elements = soup.find_all(['span', 'div', 'h3'], class_=lambda x: x and 'organization' in str(x).lower())
                 if org_elements:
                     org_name = org_elements[0].get_text(strip=True)
@@ -116,19 +116,19 @@ class ProjectDetailScraperParallel:
                 verified_elements = soup.find_all(['span', 'div'], class_=lambda x: x and 'verified' in str(x).lower())
                 verified = len(verified_elements) > 0
                 
-                # Proje yayın tarihini çek (created div'inden)
+                # Fetch the project publication date (from the created div)
                 published_date = None
                 created_divs = soup.find_all("div", class_=lambda x: x and "created" in str(x).lower())
                 for div in created_divs:
                     span = div.find("span")
                     if span:
                         date_text = span.get_text(strip=True)
-                        # "Today", "1 day ago", "2 days ago" gibi ifadeleri parse et
+                        # Parse expressions such as "Today", "1 day ago", "2 days ago"
                         published_date = self._parse_relative_date(date_text)
                         if published_date:
                             break
                 
-                # Son başvuru tarihini çek (deadline, application deadline, expires vb.)
+                # Fetch the application deadline (deadline, application deadline, expires, etc.)
                 application_deadline = None
                 content_cards = soup.find_all("div", class_="card-content")
                 for card in content_cards:
@@ -147,7 +147,7 @@ class ProjectDetailScraperParallel:
                                 break
                 
                 if not application_deadline:
-                    # Genel arama
+                    # General search
                     all_text = soup.get_text()
                     deadline_keywords = ["deadline", "expires", "closes", "application deadline", "closing date"]
                     for keyword in deadline_keywords:
@@ -161,7 +161,7 @@ class ProjectDetailScraperParallel:
                                     break
                 
                 return {
-                    "tam_aciklama": full_description if full_description else "AÇIKLAMA BULUNAMADI",
+                    "full_description": full_description if full_description else "DESCRIPTION NOT FOUND",
                     "organization_name": org_name,
                     "verified": verified,
                     "address": address,
@@ -174,7 +174,7 @@ class ProjectDetailScraperParallel:
                 if e.response.status_code == 429:
                     # Rate limiting - exponential backoff
                     wait_time = min(self.request_delay * (2 ** attempt), self.max_retry_delay)
-                    self.logger.warning(f"Rate limit (429) - {wait_time} saniye bekleniyor...")
+                    self.logger.warning(f"Rate limit (429) - waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                     if attempt < retries:
                         continue
@@ -182,9 +182,9 @@ class ProjectDetailScraperParallel:
                     time.sleep(self.retry_delay)
                     continue
                 else:
-                    self.logger.warning(f"Proje detayı çekilemedi: {detail_url} - {str(e)}")
+                    self.logger.warning(f"Could not fetch project details: {detail_url} - {str(e)}")
                     return {
-                        "tam_aciklama": f"HATA: {str(e)}",
+                        "full_description": f"ERROR: {str(e)}",
                         "organization_name": None,
                         "verified": False,
                         "address": None,
@@ -198,9 +198,9 @@ class ProjectDetailScraperParallel:
                     time.sleep(wait_time)
                     continue
                 else:
-                    self.logger.warning(f"Proje detayı çekilemedi: {detail_url} - {str(e)}")
+                    self.logger.warning(f"Could not fetch project details: {detail_url} - {str(e)}")
                     return {
-                        "tam_aciklama": f"HATA: {str(e)}",
+                        "full_description": f"ERROR: {str(e)}",
                         "organization_name": None,
                         "verified": False,
                         "address": None,
@@ -209,9 +209,9 @@ class ProjectDetailScraperParallel:
                         "application_deadline": None
                     }
             except Exception as e:
-                self.logger.error(f"Beklenmeyen hata: {detail_url} - {str(e)}")
+                self.logger.error(f"Unexpected error: {detail_url} - {str(e)}")
                 return {
-                    "tam_aciklama": f"HATA: {str(e)}",
+                    "full_description": f"ERROR: {str(e)}",
                     "organization_name": None,
                     "verified": False,
                     "address": None,
@@ -221,7 +221,7 @@ class ProjectDetailScraperParallel:
                 }
         
         return {
-            "tam_aciklama": "BULUNAMADI",
+            "full_description": "NOT FOUND",
             "organization_name": None,
             "verified": False,
             "address": None,
@@ -232,13 +232,13 @@ class ProjectDetailScraperParallel:
     
     def _parse_relative_date(self, date_text: str):
         """
-        "Today", "1 day ago", "2 days ago" gibi ifadeleri gerçek tarihe çevirir.
+        Converts expressions such as "Today", "1 day ago", "2 days ago" into actual dates.
         
         Args:
-            date_text: Tarih metni (örn: "Today", "1 day ago", "2 days ago")
+            date_text: Date text (e.g. "Today", "1 day ago", "2 days ago")
         
         Returns:
-            datetime objesi veya None
+            datetime object or None
         """
         from datetime import datetime, timedelta
         import re
@@ -248,49 +248,49 @@ class ProjectDetailScraperParallel:
         if "today" in date_text:
             return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X day(s) ago" formatını parse et
+        # Parse the "X day(s) ago" format
         match = re.search(r'(\d+)\s*(day|days)\s*ago', date_text)
         if match:
             days_ago = int(match.group(1))
             return (datetime.now() - timedelta(days=days_ago)).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X week(s) ago" formatını parse et
+        # Parse the "X week(s) ago" format
         match = re.search(r'(\d+)\s*(week|weeks)\s*ago', date_text)
         if match:
             weeks_ago = int(match.group(1))
             return (datetime.now() - timedelta(weeks=weeks_ago)).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X month(s) ago" formatını parse et
+        # Parse the "X month(s) ago" format
         match = re.search(r'(\d+)\s*(month|months)\s*ago', date_text)
         if match:
             months_ago = int(match.group(1))
-            # Yaklaşık olarak 30 gün = 1 ay
+            # Approximately 30 days = 1 month
             return (datetime.now() - timedelta(days=months_ago * 30)).replace(hour=0, minute=0, second=0, microsecond=0)
         
         return None
     
     def _parse_date_string(self, date_text: str):
         """
-        Farklı formatlardaki tarih metinlerini parse eder.
+        Parses date texts in different formats.
         
         Args:
-            date_text: Tarih metni (örn: "2024-12-31", "31/12/2024", "December 31, 2024")
+            date_text: Date text (e.g. "2024-12-31", "31/12/2024", "December 31, 2024")
         
         Returns:
-            datetime objesi veya None
+            datetime object or None
         """
         from datetime import datetime
         import re
         
         date_text = date_text.strip()
         
-        # YYYY-MM-DD formatı
+        # YYYY-MM-DD format
         try:
             return datetime.strptime(date_text[:10], "%Y-%m-%d")
         except:
             pass
         
-        # DD/MM/YYYY veya MM/DD/YYYY formatı
+        # DD/MM/YYYY or MM/DD/YYYY format
         date_pattern = r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})'
         match = re.search(date_pattern, date_text)
         if match:
@@ -300,7 +300,7 @@ class ProjectDetailScraperParallel:
             except:
                 pass
         
-        # "December 31, 2024" formatı
+        # "December 31, 2024" format
         try:
             return datetime.strptime(date_text[:20], "%B %d, %Y")
         except:
@@ -314,49 +314,49 @@ class ProjectDetailScraperParallel:
         return None
     
     def _scrape_single_project(self, link: str) -> Dict:
-        """Tek bir projeyi scrape eder (paralel işleme için)"""
+        """Scrapes a single project (for parallel processing)"""
         project_info = self.extract_project_info(link)
         
-        # Adaptive delay - başarılı isteklerden sonra delay'i kullan
+        # Adaptive delay - use the delay after successful requests
         time.sleep(self.current_delay)
         
         from datetime import datetime
         return {
             "link": link,
-            "tam_aciklama": project_info.get("tam_aciklama", ""),
+            "full_description": project_info.get("full_description", ""),
             "organization_name": project_info.get("organization_name"),
             "verified": project_info.get("verified", False),
             "address": project_info.get("address"),
             "website": project_info.get("website"),
-            "published_date": project_info.get("published_date"),  # Gerçek yayın tarihi
-            "application_deadline": project_info.get("application_deadline"),  # Son başvuru tarihi
-            "scraped_at": datetime.now().isoformat()  # Scraping zamanı
+            "published_date": project_info.get("published_date"),  # Actual publication date
+            "application_deadline": project_info.get("application_deadline"),  # Application deadline
+            "scraped_at": datetime.now().isoformat()  # Scraping time
         }
     
     def scrape_all_projects(self, links: List[str]) -> pd.DataFrame:
         """
-        Tüm proje linklerinden detayları paralel olarak çeker.
+        Fetches details from all project links in parallel.
         
         Args:
-            links: Proje link listesi
+            links: List of project links
         
         Returns:
-            Proje detayları DataFrame
+            Project details DataFrame
         """
-        self.logger.info(f"{len(links)} adet proje detayı paralel olarak çekiliyor... (Max {self.max_workers} thread)")
+        self.logger.info(f"Fetching {len(links)} project details in parallel... (max {self.max_workers} threads)")
         
-        proje_verileri = []
-        basarisiz_linkler = 0
+        project_records = []
+        failed_links = 0
         
-        # Paralel scraping (adaptive rate limiting ile)
-        self.logger.info(f"Paralel scraping başlatılıyor: {len(links)} proje, {self.max_workers} thread")
+        # Parallel scraping (with adaptive rate limiting)
+        self.logger.info(f"Starting parallel scraping: {len(links)} projects, {self.max_workers} threads")
         start_time = time.time()
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            # Tüm görevleri başlat
+            # Start all tasks
             future_to_link = {executor.submit(self._scrape_single_project, link): link for link in links}
             
-            # Sonuçları topla
+            # Collect the results
             completed = 0
             total_429_errors = 0
             
@@ -367,58 +367,58 @@ class ProjectDetailScraperParallel:
                 try:
                     project_data = future.result()
                     
-                    if "HATA" in project_data.get("tam_aciklama", "") or "BULUNAMADI" in project_data.get("tam_aciklama", ""):
-                        if "429" in project_data.get("tam_aciklama", ""):
+                    if "ERROR" in project_data.get("full_description", "") or "NOT FOUND" in project_data.get("full_description", ""):
+                        if "429" in project_data.get("full_description", ""):
                             total_429_errors += 1
-                            # Çok fazla 429 hatası varsa, thread'leri yavaşlat
+                            # If there are too many 429 errors, slow the threads down
                             if total_429_errors >= 5 and total_429_errors % 5 == 0:
-                                self.logger.warning(f"Çok fazla rate limit hatası ({total_429_errors})! Delay artırılıyor...")
+                                self.logger.warning(f"Too many rate limit errors ({total_429_errors})! Increasing the delay...")
                                 self.current_delay = min(self.current_delay * 1.2, 5.0)
                         
-                        self.logger.warning(f"Bu ilan atlanıyor: {link}")
-                        basarisiz_linkler += 1
+                        self.logger.warning(f"Skipping this listing: {link}")
+                        failed_links += 1
                     
-                    proje_verileri.append(project_data)
+                    project_records.append(project_data)
                     
-                    # İlerleme raporu (daha sık - her 10'da bir veya tamamlanınca)
+                    # Progress report (more often - every 10 items or on completion)
                     elapsed = time.time() - start_time
                     if completed % 10 == 0 or completed == len(links):
                         remaining = len(links) - completed
                         avg_time = elapsed / completed if completed > 0 else 0
                         estimated_remaining = avg_time * remaining / self.max_workers
                         self.logger.info(
-                            f"İlerleme: {completed}/{len(links)} proje işlendi "
+                            f"Progress: {completed}/{len(links)} projects processed "
                             f"({completed*100//len(links)}%) | "
-                            f"Tahmini kalan süre: {int(estimated_remaining//60)} dakika {int(estimated_remaining%60)} saniye | "
-                            f"429 hataları: {total_429_errors} | "
-                            f"Paralel: {self.max_workers} thread"
+                            f"Estimated time remaining: {int(estimated_remaining//60)} minutes {int(estimated_remaining%60)} seconds | "
+                            f"429 errors: {total_429_errors} | "
+                            f"Parallel: {self.max_workers} threads"
                         )
                     
                 except Exception as e:
-                    self.logger.error(f"Proje işleme hatası: {link} - {str(e)}")
-                    basarisiz_linkler += 1
+                    self.logger.error(f"Project processing error: {link} - {str(e)}")
+                    failed_links += 1
                     from datetime import datetime
-                    proje_verileri.append({
+                    project_records.append({
                         "link": link,
-                        "tam_aciklama": f"HATA: {str(e)}",
+                        "full_description": f"ERROR: {str(e)}",
                         "organization_name": None,
                         "verified": False,
                         "address": None,
                         "website": None,
                         "published_date": None,
-                        "scraped_at": datetime.now().isoformat()  # Hata durumunda da tarih ekle
+                        "scraped_at": datetime.now().isoformat()  # Add the date in the error case too
                     })
         
         total_time = time.time() - start_time
-        self.logger.info(f"Scraping tamamlandı: {total_time/60:.1f} dakika")
+        self.logger.info(f"Scraping completed: {total_time/60:.1f} minutes")
         
-        df_projeler = pd.DataFrame(proje_verileri)
+        df_projects = pd.DataFrame(project_records)
         
-        # Veri temizleme
-        df_projeler = clean_project_descriptions(df_projeler)
+        # Data cleaning
+        df_projects = clean_project_descriptions(df_projects)
         
-        self.logger.info(f"Toplam {len(df_projeler)} proje ilanı işlendi (Paralel: {self.max_workers} thread)")
-        if basarisiz_linkler > 0:
-            self.logger.warning(f"{basarisiz_linkler} adet ilanın detay sayfası çekilemedi")
+        self.logger.info(f"{len(df_projects)} project listings processed in total (parallel: {self.max_workers} threads)")
+        if failed_links > 0:
+            self.logger.warning(f"Could not fetch the detail page of {failed_links} listings")
         
-        return df_projeler
+        return df_projects

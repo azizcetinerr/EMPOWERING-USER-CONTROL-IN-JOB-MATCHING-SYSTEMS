@@ -1,5 +1,5 @@
 """
-Güvenilirlik skoru (R-Skoru) hesaplayan modül
+Module that computes the reliability score (R-Score)
 """
 
 import torch
@@ -11,18 +11,18 @@ import logging
 
 
 class ReliabilityScoreCalculator:
-    """Güvenilirlik skoru hesaplayıcı sınıfı"""
+    """Reliability score calculator class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
-        # NLI modeli
+        # NLI model
         nli_config = config.get('models', {}).get('nli', {})
         nli_model_name = nli_config.get('model_name', 'cross-encoder/nli-distilroberta-base')
         device_str = nli_config.get('device', 'auto')
@@ -37,40 +37,40 @@ class ReliabilityScoreCalculator:
         else:
             self.device = torch.device(device_str)
         
-        self.logger.info(f"NLI modeli yükleniyor: {nli_model_name}...")
+        self.logger.info(f"Loading NLI model: {nli_model_name}...")
         self.tokenizer = AutoTokenizer.from_pretrained(nli_model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(nli_model_name)
         self.model.to(self.device)
         self.model.eval()
-        self.logger.info(f"Model {self.device} cihazına yüklendi")
+        self.logger.info(f"Model loaded on device {self.device}")
     
     def verify_claim(self, claim: str, evidence_list: List[str]) -> float:
         """
-        Bir iddianın (becerinin) kanıt listesi içinde geçip geçmediğini doğrular.
-        Optimize edilmiş: Batch processing ve evidence sayısı sınırlaması.
+        Verifies whether a claim (skill) is supported by a list of evidence.
+        Optimized: batch processing and a limit on the number of evidence items.
         
         Args:
-            claim: İddia (beceri adı)
-            evidence_list: Kanıt listesi (CV paragrafları)
+            claim: Claim (skill name)
+            evidence_list: List of evidence (CV paragraphs)
         
         Returns:
-            Doğrulama skoru (0-100)
+            Verification score (0-100)
         """
         if not evidence_list:
             return 0.0
         
-        # İddiayı hipoteze çevir
+        # Turn the claim into a hypothesis
         hypothesis = f"I have the skill of {claim}."
         
-        # Çok fazla evidence varsa en önemli olanları seç (performans için)
-        # İlk 10 paragrafı kullan (genellikle yeterli)
+        # If there is too much evidence, select the most important items (for performance)
+        # Use the first 10 paragraphs (usually sufficient)
         max_evidence = 10
         limited_evidence = evidence_list[:max_evidence] if len(evidence_list) > max_evidence else evidence_list
         
-        # Kanıtlarla çiftler oluştur
+        # Build pairs with the evidence
         pairs = [(evidence, hypothesis) for evidence in limited_evidence]
         
-        # Modele ver (batch processing zaten yapılıyor)
+        # Feed the model (batch processing is already applied)
         inputs = self.tokenizer(
             pairs,
             padding=True,
@@ -82,13 +82,13 @@ class ReliabilityScoreCalculator:
         with torch.no_grad():
             logits = self.model(**inputs).logits
         
-        # Entailment skorunu al (1. indeks)
+        # Take the entailment score (index 1)
         entailment_scores = logits[:, 1].cpu().numpy()
         
-        # En yüksek doğrulama skorunu bul
+        # Find the highest verification score
         max_score = entailment_scores.max()
         
-        # Sigmoid benzeri dönüşümle 0-100 arası puana çevir
+        # Map to a 0-100 score with a sigmoid-like transform
         probability = 1 / (1 + np.exp(-max_score))
         
         return probability * 100
@@ -99,39 +99,39 @@ class ReliabilityScoreCalculator:
         cv_paragraphs: List[str]
     ) -> tuple:
         """
-        Tüm beceriler için güvenilirlik skorunu hesaplar.
+        Computes the reliability score over all skills.
         
         Args:
-            skills: Beceri listesi
-            cv_paragraphs: CV paragrafları
+            skills: List of skills
+            cv_paragraphs: CV paragraphs
         
         Returns:
-            (final_r_score, details_df) tuple'ı
+            (final_r_score, details_df) tuple
         """
-        self.logger.info(f"{len(skills)} adet beceri doğrulanıyor...")
+        self.logger.info(f"Verifying {len(skills)} skills...")
         
-        dogrulama_sonuclari = []
-        toplam_skor = 0
+        verification_results = []
+        total_score = 0
         
         for skill in skills:
             score = self.verify_claim(skill, cv_paragraphs)
-            toplam_skor += score
+            total_score += score
             
-            durum = "✅ Doğrulandı" if score > 50 else "❓ Kanıt Zayıf"
-            dogrulama_sonuclari.append({
-                "Beceri": skill,
-                "R_Skoru": score,
-                "Durum": durum
+            status = "✅ Verified" if score > 50 else "❓ Weak evidence"
+            verification_results.append({
+                "Skill": skill,
+                "R_Score": score,
+                "Status": status
             })
             
-            self.logger.debug(f"Skill: {skill.ljust(30)} -> Skor: {score:.1f} ({durum})")
+            self.logger.debug(f"Skill: {skill.ljust(30)} -> Score: {score:.1f} ({status})")
         
-        # Genel güvenilirlik skoru
-        final_r_score = toplam_skor / len(skills) if skills else 0.0
+        # Overall reliability score
+        final_r_score = total_score / len(skills) if skills else 0.0
         
-        self.logger.info(f"Nihai Güvenilirlik Skoru (R): {final_r_score:.2f} / 100")
+        self.logger.info(f"Final reliability score (R): {final_r_score:.2f} / 100")
         
-        details_df = pd.DataFrame(dogrulama_sonuclari)
+        details_df = pd.DataFrame(verification_results)
         
         return final_r_score, details_df
     
@@ -145,23 +145,23 @@ class ReliabilityScoreCalculator:
         project_count: int = 0
     ) -> float:
         """
-        Temel R skorunu kurum bilgilerine göre günceller.
+        Updates the base R score using the organization information.
         
         Args:
-            base_r_score: Temel güvenilirlik skoru (0-100) - Beceri doğrulama skoru
-            organization_name: Kurum adı
-            verified: Kurum onaylı mı?
-            address: Kurum adresi
-            website: Kurum web sitesi
-            project_count: Kurumun geçmiş proje sayısı
+            base_r_score: Base reliability score (0-100) - skill verification score
+            organization_name: Organization name
+            verified: Is the organization verified?
+            address: Organization address
+            website: Organization website
+            project_count: Number of past projects of the organization
         
         Returns:
-            Güncellenmiş R skoru (0-100)
+            Updated R score (0-100)
         """
         reliability_config = self.config.get('reliability_scoring', {})
         enhanced_score = base_r_score
         
-        # 1. Kurumun geçmiş proje sayısı bonusu
+        # 1. Bonus for the organization's number of past projects
         if reliability_config.get('project_count_bonus', {}).get('enabled', True):
             thresholds = reliability_config.get('project_count_bonus', {}).get('thresholds', [1, 5, 10, 20, 50])
             bonuses = reliability_config.get('project_count_bonus', {}).get('bonuses', [2.0, 5.0, 10.0, 15.0, 20.0])
@@ -174,41 +174,41 @@ class ReliabilityScoreCalculator:
             
             enhanced_score += project_bonus
             if project_bonus > 0:
-                self.logger.debug(f"Proje sayısı bonusu: +{project_bonus:.1f} (Proje sayısı: {project_count})")
+                self.logger.debug(f"Project count bonus: +{project_bonus:.1f} (project count: {project_count})")
         
-        # 2. Onay statüsü bonusu
+        # 2. Verification status bonus
         if reliability_config.get('verified_bonus', {}).get('enabled', True):
             verified_bonus_value = reliability_config.get('verified_bonus', {}).get('bonus_score', 15.0) if verified else 0.0
             enhanced_score += verified_bonus_value
             if verified_bonus_value > 0:
-                self.logger.debug(f"Onay statüsü bonusu: +{verified_bonus_value:.1f}")
+                self.logger.debug(f"Verification status bonus: +{verified_bonus_value:.1f}")
         
-        # 3. Eksik veri cezası
+        # 3. Missing data penalty
         if reliability_config.get('missing_data_penalties', {}).get('enabled', True):
             penalties = reliability_config.get('missing_data_penalties', {})
             missing_data_penalty = 0.0
             
-            # Adres eksikse
+            # If the address is missing
             if not address or (isinstance(address, str) and address.strip() == ""):
                 penalty = penalties.get('address', 10.0)
                 missing_data_penalty += penalty
-                self.logger.debug(f"Adres eksik cezası: -{penalty:.1f}")
+                self.logger.debug(f"Missing address penalty: -{penalty:.1f}")
             
-            # Web sitesi eksikse
+            # If the website is missing
             if not website or (isinstance(website, str) and website.strip() == ""):
                 penalty = penalties.get('website', 10.0)
                 missing_data_penalty += penalty
-                self.logger.debug(f"Web sitesi eksik cezası: -{penalty:.1f}")
+                self.logger.debug(f"Missing website penalty: -{penalty:.1f}")
             
-            # Kurum adı eksikse
+            # If the organization name is missing
             if not organization_name or (isinstance(organization_name, str) and organization_name.strip() == ""):
                 penalty = penalties.get('organization_name', 5.0)
                 missing_data_penalty += penalty
-                self.logger.debug(f"Kurum adı eksik cezası: -{penalty:.1f}")
+                self.logger.debug(f"Missing organization name penalty: -{penalty:.1f}")
             
             enhanced_score -= missing_data_penalty
         
-        # 4. 0-100 aralığına normalize et
+        # 4. Normalize to the 0-100 range
         if reliability_config.get('normalize_to_0_100', True):
             enhanced_score = max(0.0, min(100.0, enhanced_score))
         
@@ -218,54 +218,54 @@ class ReliabilityScoreCalculator:
         self,
         df_projects: pd.DataFrame,
         cv_paragraphs: List[str],
-        skill_column: str = "cikarilan_beceriler"
+        skill_column: str = "extracted_skills"
     ) -> pd.DataFrame:
         """
-        Her proje için güvenilirlik skorunu hesaplar.
-        Her projenin gereksinimlerini (becerilerini) alır ve bunların CV'de doğrulanma oranını hesaplar.
-        Kurum bilgilerine göre skoru günceller (proje sayısı, onay statüsü, eksik veri cezaları).
+        Computes the reliability score for each project.
+        Takes the requirements (skills) of each project and computes the share of them verified in the CV.
+        Updates the score with the organization information (project count, verification status, missing data penalties).
         
         Args:
-            df_projects: Proje DataFrame'i (beceri listeleri ve kurum bilgileri içermeli)
-            cv_paragraphs: CV paragrafları
-            skill_column: Beceri listesi sütunu adı
+            df_projects: Project DataFrame (must contain skill lists and organization information)
+            cv_paragraphs: CV paragraphs
+            skill_column: Name of the skill list column
         
         Returns:
-            R_Skoru eklenmiş DataFrame
+            DataFrame with R_Score added
         """
-        self.logger.info(f"{len(df_projects)} adet proje için R skorları hesaplanıyor...")
-        self.logger.info("Her proje için: Projenin gereksinimlerinin CV'de doğrulanma oranı + kurum bilgileri")
+        self.logger.info(f"Computing R scores for {len(df_projects)} projects...")
+        self.logger.info("For each project: share of the project's requirements verified in the CV + organization information")
         
         df_projects = df_projects.copy()
         
-        # Kurum bilgileri kontrolü ve varsayılan değerler
+        # Check the organization information and set defaults
         if 'organization_name' not in df_projects.columns:
             df_projects['organization_name'] = None
-            self.logger.warning("organization_name sütunu bulunamadı, None olarak ayarlandı")
+            self.logger.warning("organization_name column not found, set to None")
         
         if 'verified' not in df_projects.columns:
             df_projects['verified'] = False
-            self.logger.warning("verified sütunu bulunamadı, False olarak ayarlandı")
+            self.logger.warning("verified column not found, set to False")
         
         if 'address' not in df_projects.columns:
             df_projects['address'] = None
-            self.logger.warning("address sütunu bulunamadı, None olarak ayarlandı")
+            self.logger.warning("address column not found, set to None")
         
         if 'website' not in df_projects.columns:
             df_projects['website'] = None
-            self.logger.warning("website sütunu bulunamadı, None olarak ayarlandı")
+            self.logger.warning("website column not found, set to None")
         
-        # Kurum bazlı proje sayısını hesapla (eğer organization_name varsa)
+        # Compute the number of projects per organization (if organization_name exists)
         if 'organization_name' in df_projects.columns:
-            # Sadece None olmayan kurum adlarını say
+            # Count only organization names that are not None
             valid_orgs = df_projects[df_projects['organization_name'].notna()]['organization_name']
             if len(valid_orgs) > 0:
                 org_counts = valid_orgs.value_counts().to_dict()
                 df_projects['project_count'] = df_projects['organization_name'].map(org_counts).fillna(0).astype(int)
-                self.logger.info(f"Kurum bazlı proje sayıları hesaplandı (Toplam {len(org_counts)} farklı kurum)")
+                self.logger.info(f"Project counts per organization computed ({len(org_counts)} distinct organizations in total)")
             else:
                 df_projects['project_count'] = 0
-                self.logger.warning("Geçerli kurum adı bulunamadı, proje sayısı 0 olarak ayarlandı")
+                self.logger.warning("No valid organization name found, project count set to 0")
         else:
             df_projects['project_count'] = 0
         
@@ -273,28 +273,28 @@ class ReliabilityScoreCalculator:
         base_r_scores = []
         total_projects = len(df_projects)
         
-        # Progress reporting için
+        # For progress reporting
         processed = 0
         
         for idx, row in df_projects.iterrows():
             project_skills = row.get(skill_column, [])
             
-            # 1. Temel R skoru: Beceri doğrulama
+            # 1. Base R score: skill verification
             if not project_skills or not isinstance(project_skills, list) or len(project_skills) == 0:
                 base_r_score = 0.0
             else:
-                # Bu projenin becerilerinin CV'de doğrulanma oranını hesapla
-                # Tüm becerileri birleştirip batch processing yap
+                # Compute the share of this project's skills verified in the CV
+                # Combine all skills and use batch processing
                 valid_skills = [s.strip() for s in project_skills if s and isinstance(s, str) and len(s.strip()) > 0]
                 
                 if valid_skills:
-                    # Batch processing: Tüm becerileri tek seferde doğrula
+                    # Batch processing: verify all skills at once
                     total_score = 0.0
                     for skill in valid_skills:
                         score = self.verify_claim(skill, cv_paragraphs)
                         total_score += score
                 
-                # Ortalama skor
+                # Mean score
                     base_r_score = total_score / len(valid_skills)
                 else:
                     base_r_score = 0.0
@@ -302,11 +302,11 @@ class ReliabilityScoreCalculator:
             base_r_scores.append(base_r_score)
             processed += 1
             
-            # Progress reporting (her 100 projede bir)
+            # Progress reporting (every 100 projects)
             if processed % 100 == 0 or processed == total_projects:
-                self.logger.info(f"   İlerleme: {processed}/{total_projects} proje işlendi ({processed*100//total_projects}%)")
+                self.logger.info(f"   Progress: {processed}/{total_projects} projects processed ({processed*100//total_projects}%)")
             
-            # 2. Gelişmiş R skoru: Kurum bilgilerine göre güncelle
+            # 2. Extended R score: update with the organization information
             enhanced_r_score = self.calculate_enhanced_reliability_score(
                 base_r_score=base_r_score,
                 organization_name=row.get('organization_name'),
@@ -318,20 +318,20 @@ class ReliabilityScoreCalculator:
             
             r_scores.append(enhanced_r_score)
             
-            # İlerleme raporu
+            # Progress report
             if (idx + 1) % 100 == 0:
-                self.logger.info(f"   İlerleme: {idx + 1}/{len(df_projects)} proje işlendi")
+                self.logger.info(f"   Progress: {idx + 1}/{len(df_projects)} projects processed")
         
         df_result = df_projects.copy()
-        df_result["R_Skoru"] = r_scores
-        df_result["R_Skoru_Base"] = base_r_scores  # Temel skoru da kaydet (analiz için)
+        df_result["R_Score"] = r_scores
+        df_result["R_Score_Base"] = base_r_scores  # Also store the base score (for analysis)
         
-        # İstatistikler
-        self.logger.info(f"\n📊 R Skoru İstatistikleri:")
-        self.logger.info(f"  Temel R skoru (sadece beceri): Min={min(base_r_scores):.2f}, Max={max(base_r_scores):.2f}, Ortalama={sum(base_r_scores)/len(base_r_scores):.2f}")
-        self.logger.info(f"  Gelişmiş R skoru (kurum bilgileri ile): Min={min(r_scores):.2f}, Max={max(r_scores):.2f}, Ortalama={sum(r_scores)/len(r_scores):.2f}")
-        self.logger.info(f"  Ortalama fark: {(sum(r_scores)/len(r_scores)) - (sum(base_r_scores)/len(base_r_scores)):.2f} puan")
-        self.logger.info(f"✅ Tüm {len(df_projects)} proje için R skoru hesaplandı")
+        # Statistics
+        self.logger.info(f"\n📊 R score statistics:")
+        self.logger.info(f"  Base R score (skills only): Min={min(base_r_scores):.2f}, Max={max(base_r_scores):.2f}, Mean={sum(base_r_scores)/len(base_r_scores):.2f}")
+        self.logger.info(f"  Extended R score (with organization information): Min={min(r_scores):.2f}, Max={max(r_scores):.2f}, Mean={sum(r_scores)/len(r_scores):.2f}")
+        self.logger.info(f"  Mean difference: {(sum(r_scores)/len(r_scores)) - (sum(base_r_scores)/len(base_r_scores)):.2f} points")
+        self.logger.info(f"✅ R score computed for all {len(df_projects)} projects")
         
         return df_result
 

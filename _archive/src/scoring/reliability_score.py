@@ -1,5 +1,5 @@
 """
-Güvenilirlik skoru (R-Skoru) hesaplayan modül
+Module that computes the reliability score (R-Score)
 """
 
 import torch
@@ -11,18 +11,18 @@ import logging
 
 
 class ReliabilityScoreCalculator:
-    """Güvenilirlik skoru hesaplayıcı sınıfı"""
+    """Reliability score calculator class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
-        # NLI modeli
+        # NLI model
         nli_config = config.get('models', {}).get('nli', {})
         nli_model_name = nli_config.get('model_name', 'cross-encoder/nli-distilroberta-base')
         device_str = nli_config.get('device', 'auto')
@@ -37,34 +37,34 @@ class ReliabilityScoreCalculator:
         else:
             self.device = torch.device(device_str)
         
-        self.logger.info(f"NLI modeli yükleniyor: {nli_model_name}...")
+        self.logger.info(f"Loading NLI model: {nli_model_name}...")
         self.tokenizer = AutoTokenizer.from_pretrained(nli_model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(nli_model_name)
         self.model.to(self.device)
         self.model.eval()
-        self.logger.info(f"Model {self.device} cihazına yüklendi")
+        self.logger.info(f"Model loaded on device {self.device}")
     
     def verify_claim(self, claim: str, evidence_list: List[str]) -> float:
         """
-        Bir iddianın (becerinin) kanıt listesi içinde geçip geçmediğini doğrular.
+        Verifies whether a claim (skill) is supported by a list of evidence.
         
         Args:
-            claim: İddia (beceri adı)
-            evidence_list: Kanıt listesi (CV paragrafları)
+            claim: Claim (skill name)
+            evidence_list: List of evidence (CV paragraphs)
         
         Returns:
-            Doğrulama skoru (0-100)
+            Verification score (0-100)
         """
         if not evidence_list:
             return 0.0
         
-        # İddiayı hipoteze çevir
+        # Turn the claim into a hypothesis
         hypothesis = f"I have the skill of {claim}."
         
-        # Kanıtlarla çiftler oluştur
+        # Build pairs with the evidence
         pairs = [(evidence, hypothesis) for evidence in evidence_list]
         
-        # Modele ver
+        # Feed the model
         inputs = self.tokenizer(
             pairs,
             padding=True,
@@ -76,13 +76,13 @@ class ReliabilityScoreCalculator:
         with torch.no_grad():
             logits = self.model(**inputs).logits
         
-        # Entailment skorunu al (1. indeks)
+        # Take the entailment score (index 1)
         entailment_scores = logits[:, 1].cpu().numpy()
         
-        # En yüksek doğrulama skorunu bul
+        # Find the highest verification score
         max_score = entailment_scores.max()
         
-        # Sigmoid benzeri dönüşümle 0-100 arası puana çevir
+        # Map to a 0-100 score with a sigmoid-like transform
         probability = 1 / (1 + np.exp(-max_score))
         
         return probability * 100
@@ -93,39 +93,39 @@ class ReliabilityScoreCalculator:
         cv_paragraphs: List[str]
     ) -> tuple:
         """
-        Tüm beceriler için güvenilirlik skorunu hesaplar.
+        Computes the reliability score over all skills.
         
         Args:
-            skills: Beceri listesi
-            cv_paragraphs: CV paragrafları
+            skills: List of skills
+            cv_paragraphs: CV paragraphs
         
         Returns:
-            (final_r_score, details_df) tuple'ı
+            (final_r_score, details_df) tuple
         """
-        self.logger.info(f"{len(skills)} adet beceri doğrulanıyor...")
+        self.logger.info(f"Verifying {len(skills)} skills...")
         
-        dogrulama_sonuclari = []
-        toplam_skor = 0
+        verification_results = []
+        total_score = 0
         
         for skill in skills:
             score = self.verify_claim(skill, cv_paragraphs)
-            toplam_skor += score
+            total_score += score
             
-            durum = "✅ Doğrulandı" if score > 50 else "❓ Kanıt Zayıf"
-            dogrulama_sonuclari.append({
-                "Beceri": skill,
-                "R_Skoru": score,
-                "Durum": durum
+            status = "✅ Verified" if score > 50 else "❓ Weak evidence"
+            verification_results.append({
+                "Skill": skill,
+                "R_Score": score,
+                "Status": status
             })
             
-            self.logger.debug(f"Skill: {skill.ljust(30)} -> Skor: {score:.1f} ({durum})")
+            self.logger.debug(f"Skill: {skill.ljust(30)} -> Score: {score:.1f} ({status})")
         
-        # Genel güvenilirlik skoru
-        final_r_score = toplam_skor / len(skills) if skills else 0.0
+        # Overall reliability score
+        final_r_score = total_score / len(skills) if skills else 0.0
         
-        self.logger.info(f"Nihai Güvenilirlik Skoru (R): {final_r_score:.2f} / 100")
+        self.logger.info(f"Final reliability score (R): {final_r_score:.2f} / 100")
         
-        details_df = pd.DataFrame(dogrulama_sonuclari)
+        details_df = pd.DataFrame(verification_results)
         
         return final_r_score, details_df
 

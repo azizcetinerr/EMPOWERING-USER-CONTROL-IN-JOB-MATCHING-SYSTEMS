@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 MMR (Maximal Marginal Relevance) test script'i
-Mevcut sonuçları yükleyip MMR'ın çalışıp çalışmadığını test eder
+Loads the existing results and tests whether MMR works
 """
 
 import sys
@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Proje root'unu bul
+# Find the project root
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -20,168 +20,168 @@ from src.utils.logger import setup_logger
 from src.scoring.final_ranking import FinalRankingCalculator
 
 def test_mmr():
-    """MMR'ı test et"""
+    """Test MMR"""
     print("=" * 80)
     print("🔍 MMR (Maximal Marginal Relevance) TEST")
     print("=" * 80)
     
-    # Config yükle
+    # Load the config
     config_path = project_root / "config" / "config.yaml"
     config = load_config(str(config_path))
     
-    # Logger ayarla
+    # Set up the logger
     logger_config = config.get('logging', {})
     logger = setup_logger(
-        name=logger_config.get('name', 'tubitak_proje'),
+        name=logger_config.get('name', 'tubitak_project'),
         log_level=logger_config.get('level', 'INFO'),
-        log_file=logger_config.get('file', 'logs/proje.log'),
+        log_file=logger_config.get('file', 'logs/project.log'),
         console=logger_config.get('console', True),
         log_format=logger_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     )
     
-    # MMR ayarlarını kontrol et
+    # Check the MMR settings
     mmr_config = config.get('diversity_aware_ranking', {})
     mmr_enabled = mmr_config.get('enabled', False)
     mmr_top_k = mmr_config.get('top_k', 10)
     mmr_lambda = mmr_config.get('lambda', 0.5)
     
-    print(f"\n📋 MMR Ayarları:")
+    print(f"\n📋 MMR settings:")
     print(f"  enabled: {mmr_enabled}")
     print(f"  top_k: {mmr_top_k}")
     print(f"  lambda: {mmr_lambda}")
     
     if not mmr_enabled:
-        print("\n⚠️  MMR devre dışı! config.yaml'da diversity_aware_ranking.enabled: true yapın.")
+        print("\n⚠️  MMR disabled! Set diversity_aware_ranking.enabled: true in config.yaml.")
         return
     
-    # Mevcut sonuçları yükle
-    csv_file = project_root / "outputs" / "results" / "IP5_Nihai_Adil_Siralama.csv"
+    # Load the existing results
+    csv_file = project_root / "outputs" / "results" / "IP5_final_fair_ranking.csv"
     if not csv_file.exists():
-        print(f"\n❌ Sonuç dosyası bulunamadı: {csv_file}")
+        print(f"\n❌ Result file not found: {csv_file}")
         return
     
-    print(f"\n📂 Sonuçlar yükleniyor: {csv_file}")
+    print(f"\n📂 Loading results: {csv_file}")
     df_ranked = pd.read_csv(csv_file)
-    print(f"✅ {len(df_ranked)} proje yüklendi")
+    print(f"✅ {len(df_ranked)} projects loaded")
     
-    # Vektörleri yükle (birkaç olası konumda ara)
+    # Load the vectors (search several possible locations)
     vector_files = [
-        project_root / "data/processed/IP1_Ciktisi_Projeler_Vektorlu.pkl",  # Proje root'unda (en yaygın)
-        project_root / "outputs" / "processed" / "IP1_Ciktisi_Projeler_Vektorlu.pkl",
+        project_root / "data/processed/IP1_output_listings_vectorized.pkl",  # In the project root (most common)
+        project_root / "outputs" / "processed" / "IP1_output_listings_vectorized.pkl",
     ]
     
     vectors_loaded = False
     for vector_file in vector_files:
         if vector_file.exists():
-            print(f"\n📂 Vektörler yükleniyor: {vector_file}")
+            print(f"\n📂 Loading vectors: {vector_file}")
             try:
                 with open(vector_file, 'rb') as f:
                     vectors_data = pickle.load(f)
                 
-                print(f"   Vektör veri tipi: {type(vectors_data).__name__}")
+                print(f"   Vector data type: {type(vectors_data).__name__}")
                 if isinstance(vectors_data, pd.DataFrame):
-                    print(f"   DataFrame satır sayısı: {len(vectors_data)}")
+                    print(f"   DataFrame row count: {len(vectors_data)}")
                     if 'link' in vectors_data.columns:
-                        print(f"   DataFrame sütunları: {list(vectors_data.columns)}")
+                        print(f"   DataFrame columns: {list(vectors_data.columns)}")
                 elif isinstance(vectors_data, dict):
-                    print(f"   Dict key sayısı: {len(vectors_data)}")
+                    print(f"   Dict key count: {len(vectors_data)}")
                     if len(vectors_data) > 0:
-                        print(f"   İlk key örneği: {list(vectors_data.keys())[0]}")
+                        print(f"   First key sample: {list(vectors_data.keys())[0]}")
                 elif isinstance(vectors_data, list):
-                    print(f"   List uzunluğu: {len(vectors_data)}")
+                    print(f"   List length: {len(vectors_data)}")
                 
-                # Vektörleri DataFrame'e ekle
+                # Add the vectors to the DataFrame
                 if 'link' not in df_ranked.columns:
-                    print("⚠️  'link' sütunu bulunamadı, vektörler eklenemedi")
+                    print("⚠️  'link' column not found, vectors could not be added")
                     continue
                 
                 if isinstance(vectors_data, pd.DataFrame):
-                    # DataFrame ise 'link' ile merge et
+                    # If it is a DataFrame, merge on 'link'
                     if 'link' in df_ranked.columns and 'link' in vectors_data.columns:
-                        # Önce mevcut 'beceri_vektorleri' sütununu kaldır (varsa)
-                        if 'beceri_vektorleri' in df_ranked.columns:
-                            df_ranked = df_ranked.drop(columns=['beceri_vektorleri'])
+                        # First drop the existing 'skill_vectors' column (if any)
+                        if 'skill_vectors' in df_ranked.columns:
+                            df_ranked = df_ranked.drop(columns=['skill_vectors'])
                         
                         # Merge et
                         df_ranked = df_ranked.merge(
-                            vectors_data[['link', 'beceri_vektorleri']],
+                            vectors_data[['link', 'skill_vectors']],
                             on='link',
                             how='left'
                         )
-                        vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                        print(f"✅ Vektörler merge edildi (DataFrame): {vectors_loaded_count}/{len(df_ranked)} projede vektör var")
+                        vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                        print(f"✅ Vectors merged (DataFrame): {vectors_loaded_count}/{len(df_ranked)} projects have vectors")
                         vectors_loaded = True
                         break
-                    elif 'beceri_vektorleri' in vectors_data.columns and len(vectors_data) == len(df_ranked):
-                        # Index'e göre ekle (eğer sayı eşleşiyorsa)
-                        df_ranked['beceri_vektorleri'] = vectors_data['beceri_vektorleri'].values
-                        vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                        print(f"✅ Vektörler index ile eklendi (DataFrame): {vectors_loaded_count}/{len(df_ranked)} projede vektör var")
+                    elif 'skill_vectors' in vectors_data.columns and len(vectors_data) == len(df_ranked):
+                        # Add by index (if the counts match)
+                        df_ranked['skill_vectors'] = vectors_data['skill_vectors'].values
+                        vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                        print(f"✅ Vectors added by index (DataFrame): {vectors_loaded_count}/{len(df_ranked)} projects have vectors")
                         vectors_loaded = True
                         break
                     else:
-                        print(f"⚠️  DataFrame formatı beklenenle uyuşmuyor (link: {'link' in vectors_data.columns}, beceri_vektorleri: {'beceri_vektorleri' in vectors_data.columns}, uzunluk: {len(vectors_data)} vs {len(df_ranked)})")
+                        print(f"⚠️  DataFrame format does not match the expected one (link: {'link' in vectors_data.columns}, skill_vectors: {'skill_vectors' in vectors_data.columns}, length: {len(vectors_data)} vs {len(df_ranked)})")
                 elif isinstance(vectors_data, dict):
-                    # Dict ise link'e göre map et (string key'ler için)
-                    # Hem string hem de orijinal formatı dene
+                    # If it is a dict, map by link (for string keys)
+                    # Try both the string and the original format
                     def get_vector(link_val):
                         if pd.isna(link_val):
                             return None
                         link_str = str(link_val)
-                        # Önce direkt string key ile dene
+                        # First try the string key directly
                         if link_str in vectors_data:
                             return vectors_data[link_str]
-                        # Sonra tüm key'leri string'e çevirip dene
+                        # Then convert all keys to strings and try
                         for k, v in vectors_data.items():
                             if str(k) == link_str:
                                 return v
                         return None
                     
-                    df_ranked['beceri_vektorleri'] = df_ranked['link'].apply(get_vector)
-                    vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                    print(f"✅ Vektörler map edildi (dict): {vectors_loaded_count}/{len(df_ranked)} projede vektör var")
+                    df_ranked['skill_vectors'] = df_ranked['link'].apply(get_vector)
+                    vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                    print(f"✅ Vectors mapped (dict): {vectors_loaded_count}/{len(df_ranked)} projects have vectors")
                     vectors_loaded = True
                     break
                 elif isinstance(vectors_data, list):
-                    # List ise index'e göre ekle (sadece sayı eşleşiyorsa)
+                    # If it is a list, add by index (only if the counts match)
                     if len(vectors_data) == len(df_ranked):
-                        df_ranked['beceri_vektorleri'] = vectors_data[:len(df_ranked)]
-                        vectors_loaded_count = len([v for v in df_ranked['beceri_vektorleri'] if v is not None])
-                        print(f"✅ Vektörler list olarak eklendi: {len(vectors_data)} vektör")
+                        df_ranked['skill_vectors'] = vectors_data[:len(df_ranked)]
+                        vectors_loaded_count = len([v for v in df_ranked['skill_vectors'] if v is not None])
+                        print(f"✅ Vectors added as a list: {len(vectors_data)} vectors")
                         vectors_loaded = True
                         break
                     else:
-                        print(f"⚠️  Vektör listesi uzunluğu ({len(vectors_data)}) proje sayısı ({len(df_ranked)}) ile eşleşmiyor - link bazlı eşleştirme gerekli")
+                        print(f"⚠️  Vector list length ({len(vectors_data)}) does not match the number of projects ({len(df_ranked)}) - link-based matching required")
                 else:
-                    print(f"⚠️  Vektör verisi beklenmeyen tip: {type(vectors_data)}")
-                    print(f"    İçerik örneği: {str(vectors_data)[:200]}")
+                    print(f"⚠️  Unexpected vector data type: {type(vectors_data)}")
+                    print(f"    Content sample: {str(vectors_data)[:200]}")
             except Exception as e:
                 import traceback
-                print(f"⚠️  Vektör dosyası okunamadı: {e}")
-                print(f"    Detay: {traceback.format_exc()[:300]}")
+                print(f"⚠️  Could not read the vector file: {e}")
+                print(f"    Detail: {traceback.format_exc()[:300]}")
                 continue
     
     if not vectors_loaded:
-        print(f"\n⚠️  Vektör dosyası bulunamadı veya yüklenemedi!")
-        print(f"   Kontrol edilen dosyalar:")
+        print(f"\n⚠️  Vector file not found or could not be loaded!")
+        print(f"   Files checked:")
         for vf in vector_files:
-            print(f"     - {vf} ({'✓ VAR' if vf.exists() else '✗ YOK'})")
-        print(f"\n   Diversity hesaplaması ve MMR için vektörler gerekli!")
+            print(f"     - {vf} ({'✓ EXISTS' if vf.exists() else '✗ MISSING'})")
+        print(f"\n   Vectors are required for the diversity computation and MMR!")
         return
     
-    # FinalRankingCalculator oluştur
+    # Create the FinalRankingCalculator
     ranking_calc = FinalRankingCalculator(config, logger)
     
-    # MMR öncesi diversity hesapla
+    # Compute diversity before MMR
     print("\n" + "=" * 80)
-    print("📊 MMR ÖNCESİ METRİKLER")
+    print("📊 METRICS BEFORE MMR")
     print("=" * 80)
     
     relevance_before, diversity_before, confidence_before, rc_before, uc_before = ranking_calc.calculate_performance_metrics(
         df_ranked,
         top_k=5,
-        vector_column="beceri_vektorleri",
-        m_score_column="M_Skoru"
+        vector_column="skill_vectors",
+        m_score_column="M_Score"
     )
     
     print(f"  Relevance: {relevance_before:.4f}")
@@ -190,32 +190,32 @@ def test_mmr():
     print(f"  RC: {rc_before:.4f}")
     print(f"  UC: {uc_before:.4f}")
     
-    # MMR uygula
+    # Apply MMR
     print("\n" + "=" * 80)
-    print("🔄 MMR UYGULANIYOR")
+    print("🔄 APPLYING MMR")
     print("=" * 80)
     
-    if 'beceri_vektorleri' not in df_ranked.columns:
-        print("❌ 'beceri_vektorleri' sütunu yok! MMR çalışamaz.")
+    if 'skill_vectors' not in df_ranked.columns:
+        print("❌ No 'skill_vectors' column! MMR cannot run.")
         return
     
     df_mmr = ranking_calc._apply_mmr_ranking(
         df_ranked.copy(),
         top_k=mmr_top_k,
         lambda_param=mmr_lambda,
-        vector_column="beceri_vektorleri"
+        vector_column="skill_vectors"
     )
     
-    # MMR sonrası diversity hesapla
+    # Compute diversity after MMR
     print("\n" + "=" * 80)
-    print("📊 MMR SONRASI METRİKLER")
+    print("📊 METRICS AFTER MMR")
     print("=" * 80)
     
     relevance_after, diversity_after, confidence_after, rc_after, uc_after = ranking_calc.calculate_performance_metrics(
         df_mmr,
         top_k=5,
-        vector_column="beceri_vektorleri",
-        m_score_column="M_Skoru"
+        vector_column="skill_vectors",
+        m_score_column="M_Score"
     )
     
     print(f"  Relevance: {relevance_after:.4f}")
@@ -224,50 +224,50 @@ def test_mmr():
     print(f"  RC: {rc_after:.4f}")
     print(f"  UC: {uc_after:.4f}")
     
-    # Sonuç özeti
+    # Result summary
     print("\n" + "=" * 80)
-    print("📈 SONUÇ ÖZETİ")
+    print("📈 RESULT SUMMARY")
     print("=" * 80)
-    print(f"Diversity değişimi: {diversity_before:.4f} → {diversity_after:.4f} ({diversity_after - diversity_before:+.4f})")
+    print(f"Diversity change: {diversity_before:.4f} → {diversity_after:.4f} ({diversity_after - diversity_before:+.4f})")
     
     if diversity_after > diversity_before:
-        print("✅ MMR Diversity Score'u artırdı!")
+        print("✅ MMR increased the Diversity Score!")
     elif diversity_after == diversity_before:
-        print("⚠️  MMR Diversity Score'u değiştirmedi (projeler zaten farklı veya çok benzer)")
+        print("⚠️  MMR did not change the Diversity Score (the projects are already different or very similar)")
     else:
-        print("⚠️  MMR Diversity Score'u düşürdü (beklenmeyen durum)")
+        print("⚠️  MMR decreased the Diversity Score (unexpected outcome)")
     
-    # Top-5 projeleri karşılaştır
+    # Compare the top-5 projects
     print("\n" + "=" * 80)
-    print("🔍 TOP-5 PROJELER KARŞILAŞTIRMASI")
+    print("🔍 TOP-5 PROJECT COMPARISON")
     print("=" * 80)
     
-    print("\nMMR Öncesi (İlk 5):")
+    print("\nBefore MMR (first 5):")
     before_links = []
     for i, (idx, row) in enumerate(df_ranked.head(5).iterrows(), 1):
         link = row.get('link', 'N/A')
         before_links.append(link)
-        print(f"  {i}. Adil_Skor={row.get('Adil_Skor', 0):.2f}, "
-              f"M_Skoru={row.get('M_Skoru', 0):.2f}, "
+        print(f"  {i}. Fair_Score={row.get('Fair_Score', 0):.2f}, "
+              f"M_Score={row.get('M_Score', 0):.2f}, "
               f"Link={str(link)[:60]}...")
     
-    print("\nMMR Sonrası (İlk 5):")
+    print("\nAfter MMR (first 5):")
     after_links = []
     for i, (idx, row) in enumerate(df_mmr.head(5).iterrows(), 1):
         link = row.get('link', 'N/A')
         after_links.append(link)
-        print(f"  {i}. Adil_Skor={row.get('Adil_Skor', 0):.2f}, "
-              f"M_Skoru={row.get('M_Skoru', 0):.2f}, "
+        print(f"  {i}. Fair_Score={row.get('Fair_Score', 0):.2f}, "
+              f"M_Score={row.get('M_Score', 0):.2f}, "
               f"Link={str(link)[:60]}...")
     
-    # Projelerin değişip değişmediğini kontrol et
+    # Check whether the projects changed
     changed_count = sum(1 for b, a in zip(before_links[:5], after_links[:5]) if b != a)
-    print(f"\n📊 Sıralama Değişikliği: {changed_count}/5 proje pozisyonu değişti")
+    print(f"\n📊 Ranking change: {changed_count}/5 project positions changed")
     
-    # Vektör benzerliğini analiz et
-    if 'beceri_vektorleri' in df_mmr.columns:
+    # Analyze vector similarity
+    if 'skill_vectors' in df_mmr.columns:
         print("\n" + "=" * 80)
-        print("🔬 VEKTÖR BENZERLİK ANALİZİ (Top-5)")
+        print("🔬 VECTOR SIMILARITY ANALYSIS (Top-5)")
         print("=" * 80)
         
         top5_mmr = df_mmr.head(5)
@@ -275,7 +275,7 @@ def test_mmr():
         valid_indices = []
         
         for idx, row in top5_mmr.iterrows():
-            vec = row.get('beceri_vektorleri')
+            vec = row.get('skill_vectors')
             if vec is not None:
                 try:
                     vec_array = np.array(vec)
@@ -299,25 +299,25 @@ def test_mmr():
                 avg_sim = similarity_matrix[mask].mean()
                 min_sim = similarity_matrix[mask].min()
                 max_sim = similarity_matrix[mask].max()
-                print(f"  Ortalama benzerlik: {avg_sim:.4f}")
-                print(f"  Min benzerlik: {min_sim:.4f}")
-                print(f"  Max benzerlik: {max_sim:.4f}")
+                print(f"  Mean similarity: {avg_sim:.4f}")
+                print(f"  Min similarity: {min_sim:.4f}")
+                print(f"  Max similarity: {max_sim:.4f}")
                 print(f"  Diversity Score (1 - avg): {1.0 - avg_sim:.4f}")
                 
                 if avg_sim > 0.95:
-                    print(f"\n⚠️  Top-5 projeler ÇOK BENZER (benzerlik > 0.95)!")
-                    print(f"   Lambda değerini düşürmeyi deneyin (örn. 0.3 veya 0.4)")
+                    print(f"\n⚠️  The top-5 projects are VERY SIMILAR (similarity > 0.95)!")
+                    print(f"   Try lowering the lambda value (e.g. 0.3 or 0.4)")
                 elif avg_sim > 0.9:
-                    print(f"\n⚠️  Top-5 projeler benzer (benzerlik > 0.9)")
-                    print(f"   Lambda değerini düşürmeyi deneyin (örn. 0.4)")
+                    print(f"\n⚠️  The top-5 projects are similar (similarity > 0.9)")
+                    print(f"   Try lowering the lambda value (e.g. 0.4)")
     
-    print("\n💡 ÖNERİLER:")
+    print("\n💡 RECOMMENDATIONS:")
     if diversity_after == 0.0:
-        print("  1. Lambda değerini düşürün (config.yaml): lambda: 0.3 veya 0.4")
-        print("  2. Bu, daha fazla diversity ağırlığı verir (relevance yerine)")
-        print("  3. Pipeline'ı yeniden çalıştırın veya test script'ini lambda ile tekrar çalıştırın")
+        print("  1. Lower the lambda value (config.yaml): lambda: 0.3 or 0.4")
+        print("  2. This gives more weight to diversity (instead of relevance)")
+        print("  3. Rerun the pipeline or rerun the test script with lambda")
     
-    print("\n✅ Test tamamlandı!")
+    print("\n✅ Test completed!")
 
 if __name__ == "__main__":
     test_mmr()

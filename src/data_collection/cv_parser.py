@@ -1,5 +1,5 @@
 """
-Europass CV'den bilgileri çeken modül
+Module that extracts information from a Europass CV
 """
 
 from selenium import webdriver
@@ -16,21 +16,21 @@ import logging
 
 
 class EuropassCVParser:
-    """Europass CV parser sınıfı"""
+    """Europass CV parser class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
         self.cv_url = config.get('data_sources', {}).get('europass_cv', {}).get('url', '')
-        # URL burada boş olabilir, parse_cv çağrıldığında kontrol edilecek
+        # The URL may be empty here; it is checked when parse_cv is called
         if not self.cv_url:
-            self.logger.info("CV Parser başlatıldı (URL henüz belirtilmedi, parse işleminden önce set edilmeli)")
+            self.logger.info("CV Parser initialized (URL not set yet; it must be set before parsing)")
         
         scraping_config = config.get('scraping', {}).get('selenium', {})
         self.headless = scraping_config.get('headless', True)
@@ -41,7 +41,7 @@ class EuropassCVParser:
         self.driver = None
     
     def _setup_driver(self):
-        """Selenium driver'ı kurar"""
+        """Sets up the Selenium driver"""
         chrome_options = Options()
         if self.headless:
             chrome_options.add_argument("--headless")
@@ -52,95 +52,95 @@ class EuropassCVParser:
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         
-        # Timeout ayarları (CV parsing için uzun metinler yüklenebilir)
+        # Timeout settings (CV parsing may load long texts)
         self.driver.set_page_load_timeout(self.page_load_timeout)
         self.driver.implicitly_wait(self.implicit_wait)
         
-        self.logger.info(f"Selenium driver başlatıldı (page_load_timeout: {self.page_load_timeout}s, implicit_wait: {self.implicit_wait}s)")
+        self.logger.info(f"Selenium driver started (page_load_timeout: {self.page_load_timeout}s, implicit_wait: {self.implicit_wait}s)")
     
     def parse_cv(self) -> Tuple[str, List[str]]:
         """
-        CV'den tam metni ve beceri listesini çıkarır.
+        Extracts the full text and the skill list from the CV.
         
         Returns:
-            (tam_metin, beceri_listesi) tuple'ı
+            (full_text, skill_list) tuple
         """
 
         if not self.cv_url:
-            # Config'den tekrar kontrol et (dinamik update için)
+            # Check the config again (for dynamic updates)
             self.cv_url = self.config.get('data_sources', {}).get('europass_cv', {}).get('url', '')
             
         if not self.cv_url:
-            raise ValueError("CV URL'i belirtilmemiş! Lütfen config dosyasında veya arayüzde CV linkini girin.")
+            raise ValueError("CV URL not specified! Please enter the CV link in the config file or in the interface.")
 
         if self.driver is None:
             self._setup_driver()
         
         try:
-            self.logger.info(f"Europass CV linki çekiliyor: {self.cv_url}")
+            self.logger.info(f"Fetching Europass CV link: {self.cv_url}")
             self.driver.get(self.cv_url)
             
-            # Sayfanın yüklenmesini bekle
+            # Wait for the page to load
             skills_header_xpath = "//h2[contains(text(), 'Skills')]"
             try:
                 WebDriverWait(self.driver, self.wait_timeout).until(
                     EC.presence_of_element_located((By.XPATH, skills_header_xpath))
                 )
-                self.logger.info("Europass profili yüklendi (Skills başlığı bulundu).")
+                self.logger.info("Europass profile loaded (Skills heading found).")
             except Exception as e:
-                self.logger.warning(f"Skills başlığı için zaman aşımı ({self.wait_timeout}s). Sayfa kaynağı analiz ediliyor... Hata: {e}")
+                self.logger.warning(f"Timeout waiting for the Skills heading ({self.wait_timeout}s). Analyzing page source... Error: {e}")
                 
-                # Debugging: Ne yüklendi?
+                # Debugging: what was loaded?
                 try:
                     h2_list = self.driver.find_elements(By.TAG_NAME, "h2")
                     h2_texts = [h.text for h in h2_list]
-                    self.logger.info(f"Mevcut H2 başlıkları: {h2_texts}")
+                    self.logger.info(f"Existing H2 headings: {h2_texts}")
                     
                     if not h2_texts:
-                         # Belki H2 değildir, sayfa başlığına bakalım
-                         self.logger.info(f"Sayfa Başlığı: {self.driver.title}")
+                         # Maybe it is not an H2; look at the page title
+                         self.logger.info(f"Page title: {self.driver.title}")
                 except Exception as debug_err:
-                    self.logger.warning(f"Debug bilgisi çekilemedi: {debug_err}")
+                    self.logger.warning(f"Could not collect debug information: {debug_err}")
 
-            self.logger.info("Veri ayrıştırılıyor...")
+            self.logger.info("Parsing data...")
             
             html_source = self.driver.page_source
             soup = BeautifulSoup(html_source, "html.parser")
             
             cv_text_list = []
-            cv_beceri_listesi = []
+            cv_skill_list = []
             
-            # Eğitim bölümü
+            # Education section
             self._extract_section(soup, "Education and training", cv_text_list)
             
-            # İş deneyimi
+            # Work experience
             self._extract_section(soup, "Work experience", cv_text_list)
             
-            # Beceriler
+            # Skills
             skills = self._extract_skills(soup)
             cv_text_list.extend(skills)
-            cv_beceri_listesi.extend(skills)
+            cv_skill_list.extend(skills)
             
-            # Sertifikalar
+            # Certificates
             self._extract_section(soup, "Certificates", cv_text_list)
             
-            # Tam metni birleştir
+            # Join the full text
             cv_full_text = "\n".join(list(filter(None, cv_text_list)))
             
-            self.logger.info(f"CV'den {len(cv_beceri_listesi)} adet ham beceri metni bulundu")
+            self.logger.info(f"Found {len(cv_skill_list)} raw skill texts in the CV")
             
-            return cv_full_text, cv_beceri_listesi
+            return cv_full_text, cv_skill_list
             
         except Exception as e:
-            self.logger.error(f"CV parsing hatası: {e}", exc_info=True)
+            self.logger.error(f"CV parsing error: {e}", exc_info=True)
             raise
         finally:
             if self.driver:
                 self.driver.quit()
-                self.logger.info("Tarayıcı kapatıldı")
+                self.logger.info("Browser closed")
     
     def _extract_section(self, soup: BeautifulSoup, section_name: str, text_list: List[str]):
-        """Belirli bir bölümü çıkarır"""
+        """Extracts a specific section"""
         header = soup.find("h2", string=lambda t: t and section_name in t)
         if header:
             current_tag = header.find_next_sibling()
@@ -150,7 +150,7 @@ class EuropassCVParser:
                 current_tag = current_tag.find_next_sibling()
     
     def _extract_skills(self, soup: BeautifulSoup) -> List[str]:
-        """Beceri bölümünü çıkarır"""
+        """Extracts the skills section"""
         skills = []
         skills_header = soup.find("h2", string=lambda t: t and "Skills" in t)
         if skills_header:
@@ -158,8 +158,8 @@ class EuropassCVParser:
             if skills_ul:
                 skill_items = skills_ul.find_all("li")
                 for item in skill_items:
-                    beceri_metni = item.text.strip()
-                    if beceri_metni:
-                        skills.append(beceri_metni)
+                    skill_text = item.text.strip()
+                    if skill_text:
+                        skills.append(skill_text)
         return skills
 

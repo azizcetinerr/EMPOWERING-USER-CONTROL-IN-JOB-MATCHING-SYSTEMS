@@ -1,5 +1,5 @@
 """
-Samimiyet skoru (S-Skoru) hesaplayan modül
+Module that computes the sincerity score (S-Score)
 """
 
 import torch
@@ -12,27 +12,27 @@ import logging
 
 
 class SincerityScoreCalculator:
-    """Samimiyet skoru hesaplayıcı sınıfı"""
+    """Sincerity score calculator class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
-        # AI Detection modeli
+        # AI detection model
         ai_config = config.get('models', {}).get('ai_detection', {})
         ai_model_name = ai_config.get('model_name', 'roberta-base-openai-detector')
         
-        self.logger.info(f"AI Detection modeli yükleniyor: {ai_model_name}...")
+        self.logger.info(f"Loading AI detection model: {ai_model_name}...")
         self.ai_tokenizer = AutoTokenizer.from_pretrained(ai_model_name)
         self.ai_model = AutoModelForSequenceClassification.from_pretrained(ai_model_name)
         self.ai_model.eval()
         
-        # Embedding modeli
+        # Embedding model
         embed_config = config.get('models', {}).get('embedding', {})
         embed_model_name = embed_config.get('model_name', 'xlm-roberta-base')
         device_str = embed_config.get('device', 'auto')
@@ -47,30 +47,30 @@ class SincerityScoreCalculator:
         else:
             self.device = torch.device(device_str)
         
-        self.logger.info(f"Embedding modeli yükleniyor: {embed_model_name}...")
+        self.logger.info(f"Loading embedding model: {embed_model_name}...")
         self.embed_tokenizer = AutoTokenizer.from_pretrained(embed_model_name)
         self.embed_model = AutoModel.from_pretrained(embed_model_name).to(self.device)
         self.embed_model.eval()
         
-        # Skorlama ayarları
+        # Scoring settings
         sincerity_config = config.get('sincerity_scoring', {})
         self.human_weight = sincerity_config.get('human_score_weight', 0.4)
         self.context_weight = sincerity_config.get('context_score_weight', 0.6)
         self.top_n = sincerity_config.get('top_n_projects', 20)
         
-        # Motivasyon mektubu
+        # Motivation letter
         self.motivation_letter = config.get('data_sources', {}).get('motivation_letter', {}).get('text', '')
         if not self.motivation_letter:
-            self.logger.warning("Motivasyon mektubu bulunamadı!")
+            self.logger.warning("Motivation letter not found!")
         
-        # Mektubun vektörünü önceden hesapla
+        # Precompute the letter's vector
         if self.motivation_letter:
             self.letter_vector = self._get_embedding(self.motivation_letter)
             self.human_score = self._detect_ai_generated(self.motivation_letter)
-            self.logger.info(f"Motivasyon mektubu AI skoru: {self.human_score:.4f}")
+            self.logger.info(f"Motivation letter AI score: {self.human_score:.4f}")
     
     def _detect_ai_generated(self, text: str) -> float:
-        """Metnin AI tarafından yazılma olasılığını döndürür"""
+        """Returns the probability that the text was written by AI"""
         inputs = self.ai_tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
         with torch.no_grad():
             logits = self.ai_model(**inputs).logits
@@ -79,7 +79,7 @@ class SincerityScoreCalculator:
         return ai_probability
     
     def _get_embedding(self, text: str) -> np.ndarray:
-        """Metnin embedding'ini döndürür"""
+        """Returns the embedding of the text"""
         inputs = self.embed_tokenizer(
             text,
             return_tensors="pt",
@@ -95,48 +95,48 @@ class SincerityScoreCalculator:
     
     def calculate_sincerity_score(self, project_text: str) -> tuple:
         """
-        Proje için samimiyet skorunu hesaplar.
+        Computes the sincerity score for a project.
         
         Args:
-            project_text: Proje açıklama metni
+            project_text: Project description text
         
         Returns:
-            (S_Skoru, Insan_Puani, Baglam_Puani) tuple'ı
+            (S_Score, Human_Score, Context_Score) tuple
         """
-        # Proje vektörünü al
+        # Get the project vector
         project_vector = self._get_embedding(str(project_text))
         
-        # Kosinüs benzerliği
+        # Cosine similarity
         similarity = cosine_similarity(self.letter_vector, project_vector)[0][0]
         context_score = similarity * 100
         
-        # İnsan yazımı skoru (tersi)
+        # Human-written score (complement)
         human_score = (1 - self.human_score) * 100
         
-        # Nihai S skoru
+        # Final S score
         final_s = (human_score * self.human_weight) + (context_score * self.context_weight)
         
         return final_s, human_score, context_score
     
     def calculate_all_scores(
         self,
-        df_projeler: pd.DataFrame,
-        text_column: str = "tam_aciklama"
+        df_projects: pd.DataFrame,
+        text_column: str = "full_description"
     ) -> pd.DataFrame:
         """
-        Tüm projeler için samimiyet skorlarını hesaplar (sadece top N).
+        Computes sincerity scores for all projects (only the top N).
         
         Args:
-            df_projeler: Proje DataFrame'i (M_Skoru ile sıralanmış olmalı)
-            text_column: Metin sütunu adı
+            df_projects: Project DataFrame (must be sorted by M_Score)
+            text_column: Name of the text column
         
         Returns:
-            S_Skoru eklenmiş DataFrame
+            DataFrame with S_Score added
         """
-        # Sadece en iyi N projeyi işle
-        df_top = df_projeler.head(self.top_n).copy()
+        # Process only the best N projects
+        df_top = df_projects.head(self.top_n).copy()
         
-        self.logger.info(f"{len(df_top)} adet proje için samimiyet skorları hesaplanıyor...")
+        self.logger.info(f"Computing sincerity scores for {len(df_top)} projects...")
         
         scores = []
         human_scores = []
@@ -149,10 +149,10 @@ class SincerityScoreCalculator:
             context_scores.append(c_score)
         
         df_result = df_top.copy()
-        df_result["S_Skoru"] = scores
-        df_result["Insan_Puani"] = human_scores
-        df_result["Baglam_Puani"] = context_scores
+        df_result["S_Score"] = scores
+        df_result["Human_Score"] = human_scores
+        df_result["Context_Score"] = context_scores
         
-        self.logger.info("Samimiyet skorları hesaplandı")
+        self.logger.info("Sincerity scores computed")
         return df_result
 

@@ -1,38 +1,38 @@
-# MMR (Maximal Marginal Relevance) Algoritması Entegrasyonu ve Sorun Çözüm Raporu
+# MMR (Maximal Marginal Relevance) Algorithm Integration and Troubleshooting Report
 
-## 📋 İçindekiler
-1. [Proje Özeti](#proje-özeti)
-2. [Başlangıç Durumu ve Tespit Edilen Sorunlar](#başlangıç-durumu-ve-tespit-edilen-sorunlar)
-3. [MMR Algoritması Entegrasyonu](#mmr-algoritması-entegrasyonu)
-4. [Karşılaşılan Teknik Sorunlar ve Çözümleri](#karşılaşılan-teknik-sorunlar-ve-çözümleri)
-5. [Yapılan Testler ve Sonuçlar](#yapılan-testler-ve-sonuçlar)
-6. [Mevcut Durum](#mevcut-durum)
-7. [Gelecek Öneriler](#gelecek-öneriler)
-8. [Teknik Detaylar](#teknik-detaylar)
+## 📋 Contents
+1. [Project Summary](#1-project-summary)
+2. [Initial State and Problems Detected](#2-initial-state-and-problems-detected)
+3. [MMR Algorithm Integration](#3-mmr-algorithm-integration)
+4. [Technical Problems Encountered and Their Solutions](#4-technical-problems-encountered-and-their-solutions)
+5. [Tests Performed and Results](#5-tests-performed-and-results)
+6. [Current Status](#6-current-status)
+7. [Future Suggestions](#7-future-suggestions)
+8. [Technical Details](#8-technical-details)
 
 ---
 
-## 1. Proje Özeti
+## 1. Project Summary
 
-Bu proje, TÜBİTAK destekli bir öneri sistemi geliştirme çalışmasıdır. Sistem, adayların CV'lerine göre uygun projeleri önermektedir. Sistem şu bileşenlerden oluşmaktadır:
+This project is a TUBITAK-supported recommender system development effort. The system recommends suitable projects based on candidates' CVs. The system consists of the following components:
 
-- **Matching Score (M-Skoru)**: Aday becerileri ile proje gereksinimleri arasındaki uyum skoru
-- **Sincerity Score (S-Skoru)**: Adayın samimiyet skoru
-- **Reliability Score (R-Skoru)**: Proje bilgilerinin güvenilirlik skoru
-- **Final Ranking**: Tüm skorların ağırlıklı ortalaması ile nihai sıralama
+- **Matching Score (M-Score)**: fit score between the candidate's skills and the project requirements
+- **Sincerity Score (S-Score)**: the candidate's sincerity score
+- **Reliability Score (R-Score)**: reliability score of the project information
+- **Final Ranking**: final ranking with the weighted mean of all scores
 - **Performance Metrics**: Relevance Accuracy, Diversity Score, Confidence, Recommendation Coverage, User Coverage
 
-### Sistemin Amacı
-Sistem, adaylara en uygun projeleri önermekle birlikte, önerilen projelerin birbirinden farklı (diverse) olmasını da sağlamalıdır. Çünkü aynı tür projeleri önermek, kullanıcı deneyimini düşürür ve sistemin etkinliğini azaltır.
+### Purpose of the system
+Besides recommending the most suitable projects to candidates, the system should also ensure that the recommended projects differ from each other (are diverse), because recommending projects of the same kind lowers the user experience and reduces the effectiveness of the system.
 
 ---
 
-## 2. Başlangıç Durumu ve Tespit Edilen Sorunlar
+## 2. Initial State and Problems Detected
 
-### 2.1. İlk Tespit Edilen Sorun: "Matematiksel Klonlama"
+### 2.1. First problem detected: "mathematical cloning"
 
-**Sorun Tanımı:**
-Sistem metrikleri hesaplandığında şu sonuçlar elde ediliyordu:
+**Problem definition:**
+When the system metrics were computed, the following results were obtained:
 
 ```json
 {
@@ -46,107 +46,107 @@ Sistem metrikleri hesaplandığında şu sonuçlar elde ediliyordu:
 }
 ```
 
-**Sorunun Belirtileri:**
-1. **Diversity Score = 0.0**: Bu, önerilen projelerin birbirine neredeyse identik olduğunu gösteriyordu
-2. **Confidence = 0.0586**: Çok düşük bir güven skoru, skorların birbirine çok yakın olduğunu (düşük standart sapma) gösteriyordu
-3. Bu iki durum birlikte "Matematiksel Klonlama" problemi olarak adlandırıldı
+**Symptoms of the problem:**
+1. **Diversity Score = 0.0**: this showed that the recommended projects were almost identical to each other
+2. **Confidence = 0.0586**: a very low confidence score, showing that the scores were very close to each other (low standard deviation)
+3. Together, these two observations were called the "mathematical cloning" problem
 
-**Sorunun Nedenleri:**
-- Sistem, sadece relevance (uyum) skoruna göre sıralama yapıyordu
-- Diversity (çeşitlilik) faktörü hiç dikkate alınmıyordu
-- En yüksek skorlu projeler birbirine benzer olduğu için, top-5 öneriler birbirinin kopyası gibiydi
+**Causes of the problem:**
+- The system ranked only by the relevance score
+- The diversity factor was not considered at all
+- Since the highest-scoring projects were similar to each other, the top-5 recommendations looked like copies of each other
 
-### 2.2. İlk Çözüm Denemeleri
+### 2.2. First solution attempts
 
-#### Deneme 1: Confidence Hesaplamasını Düzeltme
-- **Yapılan**: Confidence metrik hesaplamasında normalize edilmiş skorlar yerine ham skorlar kullanılmaya başlandı
-- **Sonuç**: Confidence değeri biraz arttı (0.0586 → 0.0429) ama Diversity Score hala 0.0 kaldı
-- **Neden Başarısız**: Sorun confidence'da değil, diversity'deydi
+#### Attempt 1: Fixing the Confidence computation
+- **Done**: raw scores started to be used instead of normalized scores in the Confidence metric computation
+- **Result**: the Confidence value changed slightly (0.0586 → 0.0429) but the Diversity Score stayed at 0.0
+- **Why it failed**: the problem was not in confidence but in diversity
 
-#### Deneme 2: Logging ve Debugging
-- **Yapılan**: Diversity hesaplama koduna detaylı logging eklendi
-- **Sonuç**: Sorunun kaynağı daha iyi anlaşıldı ama çözüm sağlanamadı
-- **Neden Başarısız**: Logging sorunu gösterdi ama çözmedi
+#### Attempt 2: Logging and debugging
+- **Done**: detailed logging was added to the diversity computation code
+- **Result**: the source of the problem was better understood but no solution was achieved
+- **Why it failed**: logging showed the problem but did not solve it
 
 ---
 
-## 3. MMR Algoritması Entegrasyonu
+## 3. MMR Algorithm Integration
 
-### 3.1. MMR Algoritması Nedir?
+### 3.1. What is the MMR algorithm?
 
-**MMR (Maximal Marginal Relevance)** algoritması, information retrieval ve recommendation sistemlerinde kullanılan bir yeniden sıralama (re-ranking) algoritmasıdır.
+The **MMR (Maximal Marginal Relevance)** algorithm is a re-ranking algorithm used in information retrieval and recommender systems.
 
-**Amaç**: Relevance (uygunluk) ve Diversity (çeşitlilik) arasında optimal dengeyi sağlamak.
+**Goal**: to achieve the optimal balance between relevance and diversity.
 
-**Formül**:
+**Formula**:
 ```
 MMR_Score = λ * Relevance + (1 - λ) * Diversity
 ```
 
-Burada:
-- **λ (lambda)**: Relevance ağırlığı (0.0 - 1.0 arası)
-  - λ = 1.0 → Sadece relevance önemli (diversity yok)
-  - λ = 0.5 → Relevance ve diversity eşit ağırlıkta
-  - λ = 0.0 → Sadece diversity önemli (relevance yok)
-- **Relevance**: Projenin aday profiliyle uyumu (Adil_Skor)
-- **Diversity**: Projenin daha önce seçilen projelere olan farklılığı (1 - maksimum cosine similarity)
+Where:
+- **λ (lambda)**: relevance weight (between 0.0 and 1.0)
+  - λ = 1.0 → only relevance matters (no diversity)
+  - λ = 0.5 → relevance and diversity have equal weight
+  - λ = 0.0 → only diversity matters (no relevance)
+- **Relevance**: the project's fit with the candidate profile (Fair_Score)
+- **Diversity**: how different the project is from the previously selected projects (1 - maximum cosine similarity)
 
-### 3.2. MMR Algoritmasının Çalışma Mantığı
+### 3.2. How the MMR algorithm works
 
-1. **İlk Proje Seçimi**: En yüksek Adil_Skor'a sahip proje seçilir (zaten sıralanmış listede ilk sırada)
+1. **First project selection**: the project with the highest Fair_Score is selected (already first in the sorted list)
 
-2. **Kalan Projeler için İterasyon**:
-   - Her kalan proje için:
-     - **Relevance**: Adil_Skor (normalize edilmiş: 0-1 arası)
-     - **Diversity**: Seçili projelere olan maksimum cosine similarity'nin tersi (1 - max_similarity)
+2. **Iteration over the remaining projects**:
+   - For each remaining project:
+     - **Relevance**: Fair_Score (normalized: between 0 and 1)
+     - **Diversity**: the complement of the maximum cosine similarity to the selected projects (1 - max_similarity)
      - **MMR_Score**: λ * Relevance + (1 - λ) * Diversity
-   - En yüksek MMR_Score'a sahip proje seçilir
-   - Seçilen proje "seçili projeler" listesine eklenir
+   - The project with the highest MMR_Score is selected
+   - The selected project is added to the "selected projects" list
 
-3. **Sonuç**: Top-K proje, relevance ve diversity dengesi gözetilerek seçilmiş olur
+3. **Result**: the Top-K projects are selected with the balance of relevance and diversity in mind
 
-### 3.3. MMR Entegrasyonu - Kod Değişiklikleri
+### 3.3. MMR integration - code changes
 
-#### 3.3.1. Config Dosyasına MMR Ayarları Eklendi
+#### 3.3.1. MMR settings added to the config file
 
-**Dosya**: `config/config.yaml`
+**File**: `config/config.yaml`
 
 ```yaml
-# Diversity-Aware Ranking (MMR) Ayarları
+# Diversity-Aware Ranking (MMR) Settings
 diversity_aware_ranking:
-  enabled: true  # MMR algoritmasını etkinleştir
-  top_k: 10  # MMR ile seçilecek proje sayısı (top-K)
-  lambda: 0.3  # Relevance ağırlığı (0.0-1.0), 0.3 = %30 relevance, %70 diversity
+  enabled: true  # Enable the MMR algorithm
+  top_k: 10  # Number of projects selected with MMR (top-K)
+  lambda: 0.3  # Relevance weight (0.0-1.0), 0.3 = 30% relevance, 70% diversity
 ```
 
-**Neden Bu Değerler?**
-- `enabled: true`: MMR'ı aktif hale getirmek için
-- `top_k: 10`: İlk 10 projeyi MMR ile seçmek (daha fazla çeşitlilik için yeterli sayı)
-- `lambda: 0.3`: Diversity'yi artırmak için relevance'den daha fazla ağırlık verdik (%70 diversity, %30 relevance)
+**Why these values?**
+- `enabled: true`: to activate MMR
+- `top_k: 10`: select the first 10 projects with MMR (a sufficient number for more diversity)
+- `lambda: 0.3`: to increase diversity we gave it more weight than relevance (70% diversity, 30% relevance)
 
-#### 3.3.2. FinalRankingCalculator Sınıfına MMR Metodu Eklendi
+#### 3.3.2. MMR method added to the FinalRankingCalculator class
 
-**Dosya**: `src/scoring/final_ranking.py`
+**File**: `src/scoring/final_ranking.py`
 
-**Yapılan Değişiklikler**:
+**Changes made**:
 
-1. **`__init__` metoduna MMR config yükleme eklendi**:
+1. **MMR config loading added to the `__init__` method**:
 ```python
-# MMR (Diversity-Aware Ranking) ayarları
+# MMR (Diversity-Aware Ranking) settings
 mmr_config = config.get('diversity_aware_ranking', {})
 self.mmr_enabled = mmr_config.get('enabled', False)
 self.mmr_top_k = mmr_config.get('top_k', 10)
 self.mmr_lambda = mmr_config.get('lambda', 0.5)
 ```
 
-2. **`calculate_ranking` metoduna MMR çağrısı eklendi**:
+2. **MMR call added to the `calculate_ranking` method**:
 ```python
-# Sırala
-df_result = df_result.sort_values(by='Adil_Skor', ascending=False).reset_index(drop=True)
+# Sort
+df_result = df_result.sort_values(by='Fair_Score', ascending=False).reset_index(drop=True)
 
-# MMR (Maximal Marginal Relevance) ile diversity-aware top-K seçimi
+# Diversity-aware top-K selection with MMR (Maximal Marginal Relevance)
 if self.mmr_enabled and self.mmr_top_k > 0:
-    self.logger.info(f"🔄 MMR (Maximal Marginal Relevance) ile diversity-aware ranking uygulanıyor (Top-{self.mmr_top_k})...")
+    self.logger.info(f"🔄 Applying diversity-aware ranking with MMR (Maximal Marginal Relevance) (Top-{self.mmr_top_k})...")
     df_result = self._apply_mmr_ranking(
         df_result,
         top_k=self.mmr_top_k,
@@ -154,121 +154,121 @@ if self.mmr_enabled and self.mmr_top_k > 0:
     )
 ```
 
-3. **`_apply_mmr_ranking` metodu eklendi**:
-   - İlk projeyi seçer (en yüksek Adil_Skor)
-   - Kalan projeler için MMR skoru hesaplar
-   - En yüksek MMR skorlu projeleri seçer
-   - Seçilen projeleri başa alır, kalanları orijinal sırada bırakır
+3. **`_apply_mmr_ranking` method added**:
+   - Selects the first project (highest Fair_Score)
+   - Computes the MMR score for the remaining projects
+   - Selects the projects with the highest MMR scores
+   - Moves the selected projects to the top and keeps the rest in the original order
 
-**Neden Bu Yaklaşım?**
-- Top-K projeyi MMR ile seçmek, çeşitliliği artırır
-- Kalan projeleri orijinal sırada bırakmak, sistemin genel performansını korur
-- Sadece önerilen projelerin çeşitliliği artırılır, tüm sistem etkilenmez
+**Why this approach?**
+- Selecting the Top-K projects with MMR increases diversity
+- Keeping the remaining projects in the original order preserves the overall performance of the system
+- Only the diversity of the recommended projects is increased; the whole system is not affected
 
 ---
 
-## 4. Karşılaşılan Teknik Sorunlar ve Çözümleri
+## 4. Technical Problems Encountered and Their Solutions
 
-### 4.1. Sorun: Vektör Formatları Tutarsız
+### 4.1. Problem: inconsistent vector formats
 
-**Sorun Tanımı**:
-`beceri_vektorleri` sütunundaki vektörler farklı formatlardaydı:
-- Bazıları 1D array: `(768,)`
-- Bazıları 2D array: `(1, 768)` veya `(7, 768)` veya `(9, 768)`
-- Bazıları scalar float (NaN)
+**Problem definition**:
+The vectors in the `skill_vectors` column were in different formats:
+- Some were 1D arrays: `(768,)`
+- Some were 2D arrays: `(1, 768)` or `(7, 768)` or `(9, 768)`
+- Some were scalar floats (NaN)
 
-**Hata Mesajı**:
+**Error message**:
 ```
 ValueError: all the input array dimensions except for the concatenation axis must match exactly, 
 but along dimension 1, the array at index 0 has size 768 and the array at index 1 has size 5376
 ```
 
-**Neden Bu Sorun Oluştu?**
-- Farklı projeler farklı sayıda beceriye sahip
-- Her beceri için ayrı embedding vektörü oluşturulmuş
-- Bazı projelerde 1 beceri var → `(1, 768)` formatı
-- Bazı projelerde 7 beceri var → `(7, 768)` formatı
-- Cosine similarity hesaplamak için tüm vektörler aynı boyutta olmalı
+**Why did this problem occur?**
+- Different projects have different numbers of skills
+- A separate embedding vector was created for each skill
+- Some projects have 1 skill → `(1, 768)` format
+- Some projects have 7 skills → `(7, 768)` format
+- All vectors must have the same size to compute cosine similarity
 
-**Çözüm**:
-Tüm vektörleri standart bir formata çevirdik (1D array, 768 boyutunda):
+**Solution**:
+We converted all vectors to a standard format (1D array, 768-dimensional):
 
 ```python
-# 2D vektör (n_skills, 768) → 1D vektör (768,)
+# 2D vector (n_skills, 768) → 1D vector (768,)
 if vec_array.ndim == 2:
     if vec_array.shape[1] == 768:
-        normalized_vec = vec_array.mean(axis=0)  # Ortalamasını al → (768,)
+        normalized_vec = vec_array.mean(axis=0)  # Take the mean → (768,)
     else:
         normalized_vec = vec_array.flatten()
 elif vec_array.ndim == 1:
-    normalized_vec = vec_array  # Zaten 1D
+    normalized_vec = vec_array  # Already 1D
 elif vec_array.ndim > 2:
     normalized_vec = vec_array.flatten()  # 3D+ → flatten
 ```
 
-**Neden Ortalama Alma?**
-- Bir proje birden fazla beceriye sahipse, her beceri için ayrı embedding var
-- Bu embedding'lerin ortalamasını alarak, projenin "temsili vektörü"nü oluşturuyoruz
-- Bu, projenin genel beceri profilini temsil eder
+**Why take the mean?**
+- If a project has several skills, there is a separate embedding for each skill
+- By taking the mean of these embeddings, we create the project's "representative vector"
+- This represents the overall skill profile of the project
 
-### 4.2. Sorun: pd.isna() NumPy Array'lerde Çalışmıyor
+### 4.2. Problem: pd.isna() does not work on NumPy arrays
 
-**Sorun Tanımı**:
+**Problem definition**:
 ```python
-if pd.isna(vector):  # Hata veriyor!
+if pd.isna(vector):  # Raises an error!
     continue
 ```
 
-**Hata Mesajı**:
+**Error message**:
 ```
 ValueError: The truth value of an array with more than one element is ambiguous. 
 Use a.any() or a.all()
 ```
 
-**Neden Bu Sorun Oluştu?**
-- `pd.isna()` NumPy array'lerde boolean array döndürür, tek bir boolean değil
-- `if` statement'ta boolean array kullanılamaz (ambiguous)
+**Why did this problem occur?**
+- `pd.isna()` returns a boolean array for NumPy arrays, not a single boolean
+- A boolean array cannot be used in an `if` statement (ambiguous)
 
-**Çözüm**:
+**Solution**:
 ```python
-# Önce None kontrolü
+# None check first
 if vector is None:
     continue
 
-# NaN float kontrolü (pandas merge sonrası NaN float olabilir)
+# NaN float check (can be a NaN float after a pandas merge)
 if isinstance(vector, float) and (np.isnan(vector) or pd.isna(vector)):
     continue
 
-# NumPy array kontrolü için pd.isna() kullanmıyoruz, direkt np.array() ile dönüştürüyoruz
+# We do not use pd.isna() to check NumPy arrays; we convert directly with np.array()
 ```
 
-### 4.3. Sorun: Çift Normalizasyon
+### 4.3. Problem: double normalization
 
-**Sorun Tanımı**:
-Vektörler iki kez normalize ediliyordu:
-1. İlk döngüde: `vectors_list`'e eklenirken (normalize edilmiş olarak)
-2. İkinci döngüde: `normalized_vectors`'a eklenirken tekrar normalize ediliyordu
+**Problem definition**:
+The vectors were normalized twice:
+1. In the first loop: when added to `vectors_list` (as normalized)
+2. In the second loop: normalized again when added to `normalized_vectors`
 
-**Sonuç**: Vektörler yanlış normalize ediliyordu, bu da similarity hesaplamalarını bozuyordu.
+**Result**: the vectors were normalized incorrectly, which broke the similarity computations.
 
-**Çözüm**:
-İlk döngüde sadece vektörleri 1D'ye çevirdik (normalize etmeden):
+**Solution**:
+In the first loop we only converted the vectors to 1D (without normalizing):
 ```python
-# İlk döngü: Sadece 1D'ye çevir (normalize etme)
+# First loop: only convert to 1D (do not normalize)
 normalized_vec = vec_array.mean(axis=0)  # (768,)
-vectors_list.append(normalized_vec)  # Henüz normalize edilmemiş
+vectors_list.append(normalized_vec)  # Not normalized yet
 
-# İkinci döngü: Normalize et (unit vector yap)
+# Second loop: normalize (make it a unit vector)
 norm = np.linalg.norm(vec_array)
 if norm > 1e-8:
     vec_normalized = vec_array / norm  # Unit vector
     normalized_vectors.append(vec_normalized)
 ```
 
-### 4.4. Sorun: Indentation Hatası (if-else Blok Yapısı)
+### 4.4. Problem: indentation error (if-else block structure)
 
-**Sorun Tanımı**:
-Diversity hesaplama kodunda, `vectors_matrix` oluşturulduktan sonraki kodlar `else` bloğunun dışındaydı:
+**Problem definition**:
+In the diversity computation code, the code after `vectors_matrix` was created was outside the `else` block:
 
 ```python
 if len(normalized_vectors) < 2:
@@ -276,35 +276,35 @@ if len(normalized_vectors) < 2:
 else:
     vectors_matrix = np.vstack(normalized_vectors)
 
-# Bu kod else dışında! Hata!
+# This code is outside the else! Error!
 similarity_matrix = cosine_similarity(vectors_matrix)
 ```
 
-**Sonuç**: `normalized_vectors < 2` durumunda `vectors_matrix` tanımsız kalıyordu ve hata oluşuyordu.
+**Result**: when `normalized_vectors < 2`, `vectors_matrix` was undefined and an error occurred.
 
-**Çözüm**:
-Tüm similarity hesaplama kodunu `else` bloğu içine aldık:
+**Solution**:
+We moved all similarity computation code into the `else` block:
 ```python
 if len(normalized_vectors) < 2:
     diversity_score = 0.0
 else:
     vectors_matrix = np.vstack(normalized_vectors)
     similarity_matrix = cosine_similarity(vectors_matrix)
-    # ... diğer hesaplamalar ...
+    # ... other computations ...
     diversity_score = 1.0 - avg_similarity
 ```
 
-### 4.5. Sorun: Vektörlerin DataFrame Merge Sonrası Kaybolması
+### 4.5. Problem: vectors lost after a DataFrame merge
 
-**Sorun Tanımı**:
-Test script'lerinde vektörler DataFrame'den okunamıyordu çünkü:
-- Vektörler pickle dosyasında DataFrame formatında saklanıyordu
-- CSV dosyasında vektörler yoktu
-- Merge işlemi sırasında link formatları uyuşmuyordu
+**Problem definition**:
+The test scripts could not read the vectors from the DataFrame because:
+- The vectors were stored in DataFrame format in the pickle file
+- The CSV file did not contain the vectors
+- The link formats did not match during the merge
 
-**Çözüm**:
+**Solution**:
 ```python
-# Link'leri string'e çevir (uyumsuzluk olmasın)
+# Convert the links to strings (to avoid mismatches)
 vectors_df['link'] = vectors_df['link'].astype(str)
 df['link'] = df['link'].astype(str)
 df = df.merge(vectors_df, on='link', how='left')
@@ -312,34 +312,34 @@ df = df.merge(vectors_df, on='link', how='left')
 
 ---
 
-## 5. Yapılan Testler ve Sonuçlar
+## 5. Tests Performed and Results
 
-### 5.1. Test Script'leri Oluşturuldu
+### 5.1. Test scripts created
 
 #### 5.1.1. `test_mmr.py`
-**Amaç**: MMR'ın mevcut lambda değeriyle çalışıp çalışmadığını test etmek
+**Purpose**: to test whether MMR works with the current lambda value
 
-**Yaptığı İşlemler**:
-1. CSV ve vektör dosyalarını yükler
-2. Baseline metrikleri hesaplar (MMR öncesi)
-3. MMR uygular
-4. MMR sonrası metrikleri hesaplar
-5. Karşılaştırma yapar
+**What it does**:
+1. Loads the CSV and vector files
+2. Computes the baseline metrics (before MMR)
+3. Applies MMR
+4. Computes the metrics after MMR
+5. Compares them
 
-**Sonuç**: MMR çalışıyor ama Diversity Score hala düşük
+**Result**: MMR works but the Diversity Score is still low
 
 #### 5.1.2. `test_mmr_lambda.py`
-**Amaç**: Farklı lambda değerlerini test edip en iyisini bulmak
+**Purpose**: to test different lambda values and find the best one
 
-**Yaptığı İşlemler**:
-1. Lambda değerlerini test eder: [0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.0]
-2. Her lambda için MMR uygular
-3. Diversity ve Relevance metriklerini hesaplar
-4. En iyi lambda değerini önerir
+**What it does**:
+1. Tests the lambda values: [0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.0]
+2. Applies MMR for each lambda
+3. Computes the Diversity and Relevance metrics
+4. Recommends the best lambda value
 
-**Sonuçlar**:
+**Results**:
 ```
-Lambda     Diversity    Relevance    Değişim
+Lambda     Diversity    Relevance    Change
 Baseline   0.0028       52.98        -
 0.9        0.0000       52.98        -0.0028
 0.7        0.0000       52.98        -0.0028
@@ -347,228 +347,228 @@ Baseline   0.0028       52.98        -
 0.0        0.0000       52.98        -0.0028
 ```
 
-**Gözlem**: Hiçbir lambda değeri Diversity Score'u artıramadı. Bu, MMR sonrası vektörlerin diversity hesaplama kodunda işlenemediğini gösteriyor.
+**Observation**: no lambda value increased the Diversity Score. This shows that after MMR the vectors could not be processed in the diversity computation code.
 
 #### 5.1.3. `debug_diversity.py`
-**Amaç**: Diversity Score'un neden 0.0 olduğunu detaylı analiz etmek
+**Purpose**: to analyze in detail why the Diversity Score is 0.0
 
-**Yaptığı İşlemler**:
-1. Top-5 projelerin vektörlerini inceler
-2. Her vektörün tipini, shape'ini, dtype'ını kontrol eder
-3. Pairwise similarity'leri hesaplar
-4. Detaylı debug bilgisi sağlar
+**What it does**:
+1. Inspects the vectors of the top-5 projects
+2. Checks the type, shape and dtype of each vector
+3. Computes the pairwise similarities
+4. Provides detailed debug information
 
-**Sonuç**: Vektör formatları tutarsızlığı tespit edildi
+**Result**: the inconsistency of the vector formats was detected
 
-### 5.2. Test Sonuçları
+### 5.2. Test results
 
-#### Baseline (MMR Öncesi)
+#### Baseline (before MMR)
 ```
 Diversity Score: 0.0028
 Relevance Accuracy: 52.98
 Confidence: 0.0429
 ```
 
-**Yorum**: 
-- Diversity çok düşük (neredeyse 0)
-- Bu, top-5 projelerin birbirine çok benzer olduğunu gösteriyor
-- 3/5 projede vektör var (2 projede NaN)
+**Comment**:
+- Diversity is very low (almost 0)
+- This shows that the top-5 projects are very similar to each other
+- 3/5 projects have vectors (2 projects have NaN)
 
-#### MMR Sonrası (Lambda=0.0 - Sadece Diversity)
+#### After MMR (lambda=0.0 - diversity only)
 ```
 Diversity Score: 0.0000
 Relevance Accuracy: 52.98
 ```
 
-**Yorum**:
-- MMR çalışıyor (4/5 proje pozisyonu değişti)
-- Ancak Diversity Score hala 0.0
-- Bu, diversity hesaplama kodunda bir sorun olduğunu gösteriyor
-- MMR sonrası top-5'te tüm projelerde vektör var
+**Comment**:
+- MMR works (4/5 project positions changed)
+- But the Diversity Score is still 0.0
+- This shows that there is a problem in the diversity computation code
+- After MMR, all projects in the top-5 have vectors
 
 ---
 
-## 6. Mevcut Durum
+## 6. Current Status
 
-### 6.1. Başarılan İyileştirmeler
+### 6.1. Improvements achieved
 
-✅ **MMR Algoritması Entegre Edildi**:
-- `_apply_mmr_ranking` metodu eklendi
-- Config dosyasına ayarlar eklendi
-- `calculate_ranking` metoduna entegre edildi
+✅ **MMR algorithm integrated**:
+- `_apply_mmr_ranking` method added
+- Settings added to the config file
+- Integrated into the `calculate_ranking` method
 
-✅ **Vektör İşleme Düzeltildi**:
-- 2D vektörler → 1D'ye dönüştürülüyor (mean ile)
-- NaN float kontrolü eklendi
-- `pd.isna()` sorunu çözüldü
-- Çift normalizasyon sorunu çözüldü
+✅ **Vector processing fixed**:
+- 2D vectors → converted to 1D (with the mean)
+- NaN float check added
+- `pd.isna()` problem solved
+- Double normalization problem solved
 
-✅ **Kod Hataları Düzeltildi**:
-- Indentation hatası düzeltildi
-- Exception handling iyileştirildi
-- Vector processing mantığı sadeleştirildi
+✅ **Code errors fixed**:
+- Indentation error fixed
+- Exception handling improved
+- Vector processing logic simplified
 
-✅ **Test Altyapısı Oluşturuldu**:
-- `test_mmr.py`: Temel MMR testi
-- `test_mmr_lambda.py`: Lambda parametresi optimizasyonu
-- `debug_diversity.py`: Detaylı diversity analizi
+✅ **Test infrastructure created**:
+- `test_mmr.py`: basic MMR test
+- `test_mmr_lambda.py`: lambda parameter optimization
+- `debug_diversity.py`: detailed diversity analysis
 
-### 6.2. Kalan Sorunlar
+### 6.2. Remaining problems
 
-⚠️ **MMR Sonrası Diversity Score Hala 0.0**:
-- **Sorun**: MMR sonrası top-5'te tüm projelerde vektör var, ancak diversity hesaplama kodunda sadece 1 vektör işleniyor
-- **Hata Mesajı**: "⚠️ Diversity hesaplanamadı: Yeterli vektör yok (1/5)"
-- **Olası Nedenler**:
-  1. `pd.concat` sonrası vektörlerin referansları kaybolmuş olabilir
-  2. Exception handling çok geniş, vektörler sessizce atlanıyor olabilir
-  3. Vektör işleme kodunda bir edge case atlanmış olabilir
+⚠️ **The Diversity Score is still 0.0 after MMR**:
+- **Problem**: after MMR all projects in the top-5 have vectors, but only 1 vector is processed in the diversity computation code
+- **Error message**: "⚠️ Could not compute diversity: not enough vectors (1/5)"
+- **Possible causes**:
+  1. The references to the vectors may have been lost after `pd.concat`
+  2. The exception handling is too broad; vectors may be skipped silently
+  3. An edge case may have been missed in the vector processing code
 
-⚠️ **Baseline Diversity Çok Düşük**:
-- Baseline'da Diversity = 0.0028 (neredeyse 0)
-- Bu, top-5 projelerin gerçekten çok benzer olduğunu gösteriyor
-- MMR olmadan bile diversity düşük
+⚠️ **The baseline diversity is very low**:
+- Diversity = 0.0028 at baseline (almost 0)
+- This shows that the top-5 projects really are very similar
+- Diversity is low even without MMR
 
-### 6.3. Kod Durumu
+### 6.3. Code status
 
-**Çalışan Kodlar**:
-- ✅ MMR algoritması implementasyonu
-- ✅ Vektör normalizasyon mantığı
-- ✅ Baseline diversity hesaplama
-- ✅ Test script'leri
+**Working code**:
+- ✅ MMR algorithm implementation
+- ✅ Vector normalization logic
+- ✅ Baseline diversity computation
+- ✅ Test scripts
 
-**Sorunlu Kodlar**:
-- ⚠️ MMR sonrası diversity hesaplama (vektörler işlenemiyor)
+**Problematic code**:
+- ⚠️ Diversity computation after MMR (vectors cannot be processed)
 
 ---
 
-## 7. Gelecek Öneriler
+## 7. Future Suggestions
 
-### 7.1. Kısa Vadeli Çözümler
+### 7.1. Short-term solutions
 
-#### Öneri 1: Vektör İşleme Kodunu Detaylı Debug Etme
+#### Suggestion 1: debug the vector processing code in detail
 ```python
-# Diversity hesaplama koduna detaylı logging ekle
+# Add detailed logging to the diversity computation code
 for idx, row in top_projects.iterrows():
     vector = row[vector_column]
-    self.logger.debug(f"Proje {idx}: vector type={type(vector)}, shape={getattr(vector, 'shape', 'N/A')}")
-    # ... vektör işleme ...
-    self.logger.debug(f"Proje {idx}: vectors_list length={len(vectors_list)}")
+    self.logger.debug(f"Project {idx}: vector type={type(vector)}, shape={getattr(vector, 'shape', 'N/A')}")
+    # ... vector processing ...
+    self.logger.debug(f"Project {idx}: vectors_list length={len(vectors_list)}")
 ```
 
-#### Öneri 2: Exception Handling'i Daraltma
+#### Suggestion 2: narrow the exception handling
 ```python
-# Geniş exception yerine spesifik exception'lar yakala
+# Catch specific exceptions instead of a broad exception
 except ValueError as e:
-    self.logger.warning(f"Vektör işleme hatası (ValueError): {e}")
+    self.logger.warning(f"Vector processing error (ValueError): {e}")
 except TypeError as e:
-    self.logger.warning(f"Vektör işleme hatası (TypeError): {e}")
+    self.logger.warning(f"Vector processing error (TypeError): {e}")
 except AttributeError as e:
-    self.logger.warning(f"Vektör işleme hatası (AttributeError): {e}")
+    self.logger.warning(f"Vector processing error (AttributeError): {e}")
 ```
 
-#### Öneri 3: Vektörleri DataFrame'de Doğrudan Saklama
-MMR sonrası vektörlerin kaybolmaması için, vektörleri DataFrame'de doğrudan saklamak yerine, her zaman pickle dosyasından yeniden yüklemek:
+#### Suggestion 3: store the vectors directly in the DataFrame
+So that the vectors are not lost after MMR, always reload them from the pickle file instead of keeping them directly in the DataFrame:
 
 ```python
-# MMR sonrası vektörleri yeniden yükle
+# Reload the vectors after MMR
 df_mmr = ranking_calc._apply_mmr_ranking(...)
-# Vektörleri yeniden merge et
-df_mmr = df_mmr.merge(vectors_df[['link', 'beceri_vektorleri']], on='link', how='left')
+# Merge the vectors again
+df_mmr = df_mmr.merge(vectors_df[['link', 'skill_vectors']], on='link', how='left')
 ```
 
-### 7.2. Orta Vadeli İyileştirmeler
+### 7.2. Medium-term improvements
 
-#### Öneri 1: Vektör Formatını Standardize Etme
-Tüm vektörleri preprocessing aşamasında standart formata çevirmek:
-- Tüm vektörleri 1D array (768,) formatına çevir
-- NaN vektörleri temizle veya default vektör kullan
+#### Suggestion 1: standardize the vector format
+Convert all vectors to a standard format in the preprocessing stage:
+- Convert all vectors to the 1D array (768,) format
+- Remove NaN vectors or use a default vector
 
-#### Öneri 2: Alternatif Diversity Metrikleri Deneme
-- **Intra-List Diversity (ILD)**: Önerilen liste içindeki çeşitlilik
-- **Coverage-based Diversity**: Farklı kategorilerden proje önerme
-- **Content-based Diversity**: Proje içeriklerine göre çeşitlilik
+#### Suggestion 2: try alternative diversity metrics
+- **Intra-List Diversity (ILD)**: diversity within the recommended list
+- **Coverage-based diversity**: recommending projects from different categories
+- **Content-based diversity**: diversity by project content
 
-#### Öneri 3: Lambda Parametresini Dinamik Yapma
-Kullanıcı tercihlerine göre lambda'yı ayarlama:
-- Kullanıcı "daha fazla çeşitlilik" isterse → lambda düşür
-- Kullanıcı "daha uyumlu projeler" isterse → lambda artır
+#### Suggestion 3: make the lambda parameter dynamic
+Adjust lambda according to user preferences:
+- If the user wants "more diversity" → lower lambda
+- If the user wants "better-fitting projects" → raise lambda
 
-### 7.3. Uzun Vadeli İyileştirmeler
+### 7.3. Long-term improvements
 
-#### Öneri 1: Embedding Kalitesini Artırma
-- Daha iyi bir embedding modeli kullanmak
-- Domain-specific fine-tuning yapmak
-- Multi-modal embedding (text + metadata) kullanmak
+#### Suggestion 1: improve the embedding quality
+- Use a better embedding model
+- Do domain-specific fine-tuning
+- Use multi-modal embeddings (text + metadata)
 
-#### Öneri 2: Hybrid Recommendation Sistemi
-- Content-based filtering + Collaborative filtering
-- MMR + Clustering (kategori bazlı çeşitlilik)
-- User feedback'e göre dinamik ağırlıklandırma
+#### Suggestion 2: hybrid recommender system
+- Content-based filtering + collaborative filtering
+- MMR + clustering (category-based diversity)
+- Dynamic weighting based on user feedback
 
-#### Öneri 3: A/B Testing Altyapısı
-Farklı lambda değerlerini gerçek kullanıcılarla test etmek:
-- Kullanıcı memnuniyeti metrikleri
+#### Suggestion 3: A/B testing infrastructure
+Test different lambda values with real users:
+- User satisfaction metrics
 - Click-through rate (CTR)
-- Engagement metrikleri
+- Engagement metrics
 
 ---
 
-## 8. Teknik Detaylar
+## 8. Technical Details
 
-### 8.1. Cosine Similarity Hesaplama
+### 8.1. Cosine similarity computation
 
-**Formül**:
+**Formula**:
 ```
 similarity(A, B) = (A · B) / (||A|| * ||B||)
 ```
 
-**Kodda Kullanım**:
+**Use in the code**:
 ```python
-# Vektörleri normalize et (unit vector)
+# Normalize the vectors (unit vector)
 vec_normalized = vec_array / np.linalg.norm(vec_array)
 
-# Cosine similarity = dot product (normalize edilmiş vektörler için)
+# Cosine similarity = dot product (for normalized vectors)
 similarity = np.dot(vec1_normalized, vec2_normalized)
 ```
 
-**Neden Cosine Similarity?**
-- Vektörlerin büyüklüğünden bağımsız (sadece yön önemli)
-- Embedding vektörlerinde çok etkili
-- 0-1 aralığında değer verir (kolay yorumlama)
+**Why cosine similarity?**
+- Independent of the magnitude of the vectors (only the direction matters)
+- Very effective for embedding vectors
+- Gives a value in the 0-1 range (easy to interpret)
 
-### 8.2. Diversity Score Hesaplama
+### 8.2. Diversity Score computation
 
-**Formül**:
+**Formula**:
 ```
-Diversity = 1 - Ortalama_Cosine_Similarity
+Diversity = 1 - Mean_Cosine_Similarity
 ```
 
-**Kodda Kullanım**:
+**Use in the code**:
 ```python
 # Pairwise similarity matrix
 similarity_matrix = cosine_similarity(vectors_matrix)
 
-# Diagonal'i 0 yap (kendisiyle benzerlik = 1, bunu istemiyoruz)
+# Set the diagonal to 0 (self-similarity = 1, which we do not want)
 np.fill_diagonal(similarity_matrix, 0.0)
 
-# Upper triangle'dan ortalama al (sadece bir kez saymak için)
+# Take the mean of the upper triangle (to count each pair once)
 mask = np.triu(np.ones_like(similarity_matrix, dtype=bool), k=1)
 avg_similarity = similarity_matrix[mask].mean()
 
-# Diversity = 1 - Ortalama Benzerlik
+# Diversity = 1 - mean similarity
 diversity_score = 1.0 - avg_similarity
 ```
 
-**Neden Upper Triangle?**
-- Similarity matrix simetrik (A-B = B-A)
-- Her çifti sadece bir kez saymak için
-- Diagonal'i 0 yapmak: Kendisiyle benzerlik = 1, bu çeşitlilik hesaplamasında anlamsız
+**Why the upper triangle?**
+- The similarity matrix is symmetric (A-B = B-A)
+- To count each pair only once
+- Setting the diagonal to 0: self-similarity = 1, which is meaningless for diversity
 
-### 8.3. MMR Algoritması Detaylı Açıklama
+### 8.3. Detailed description of the MMR algorithm
 
 **Pseudo-code**:
 ```
-1. selected = [first_project]  # En yüksek skorlu
+1. selected = [first_project]  # Highest score
 2. remaining = all_projects - selected
 3. WHILE len(selected) < top_k:
     4. best_score = -inf
@@ -585,112 +585,112 @@ diversity_score = 1.0 - avg_similarity
 15. RETURN selected + remaining (in original order)
 ```
 
-**Zaman Karmaşıklığı**:
+**Time complexity**:
 - O(k * n * d) where:
-  - k = top_k (seçilecek proje sayısı)
-  - n = toplam proje sayısı
-  - d = embedding boyutu (768)
-- Her iterasyonda tüm kalan projeler için similarity hesaplanıyor
+  - k = top_k (number of projects to select)
+  - n = total number of projects
+  - d = embedding dimension (768)
+- In each iteration, the similarity is computed for all remaining projects
 
-**Optimizasyon Önerileri**:
-- Vectorized operations kullanmak (NumPy)
-- Batch processing yapmak
-- Early stopping (yeterli diversity'ye ulaşınca dur)
+**Optimization suggestions**:
+- Use vectorized operations (NumPy)
+- Use batch processing
+- Early stopping (stop when sufficient diversity is reached)
 
-### 8.4. Vektör İşleme Pipeline'ı
+### 8.4. Vector processing pipeline
 
 ```
-1. Vektör Yükleme
-   ├─ Pickle dosyasından oku
-   ├─ DataFrame formatında mı? → Merge et
-   └─ Dict formatında mı? → Apply ile ekle
+1. Vector loading
+   ├─ Read from the pickle file
+   ├─ In DataFrame format? → Merge
+   └─ In dict format? → Add with apply
 
-2. Vektör Formatını Standartlaştırma
+2. Standardizing the vector format
    ├─ 2D array (n, 768)? → mean(axis=0) → (768,)
-   ├─ 1D array (768,)? → Direkt kullan
+   ├─ 1D array (768,)? → Use directly
    ├─ 3D+ array? → flatten()
    └─ Scalar/NaN? → Skip
 
-3. Boyut Kontrolü
+3. Size check
    ├─ > 768? → [:768] (truncate)
    ├─ < 768? → Padding (zeros)
    └─ = 768? → OK
 
-4. Normalizasyon
-   ├─ Norm hesapla
-   ├─ Norm > 1e-8? → Normalize et (unit vector)
-   └─ Norm <= 1e-8? → Skip (sıfır vektör)
+4. Normalization
+   ├─ Compute the norm
+   ├─ Norm > 1e-8? → Normalize (unit vector)
+   └─ Norm <= 1e-8? → Skip (zero vector)
 
-5. Similarity Hesaplama
-   ├─ Normalize edilmiş vektörler → Cosine similarity
-   └─ Diversity = 1 - Ortalama Similarity
+5. Similarity computation
+   ├─ Normalized vectors → cosine similarity
+   └─ Diversity = 1 - mean similarity
 ```
 
 ---
 
-## 9. Sonuç ve Özet
+## 9. Conclusion and Summary
 
-### 9.1. Yapılanlar
+### 9.1. What was done
 
-1. ✅ **MMR Algoritması Entegre Edildi**: Diversity-aware ranking için MMR algoritması eklendi
-2. ✅ **Vektör İşleme Düzeltildi**: Tutarsız vektör formatları standardize edildi
-3. ✅ **Kod Hataları Giderildi**: Indentation, exception handling, normalizasyon sorunları çözüldü
-4. ✅ **Test Altyapısı Oluşturuldu**: 3 farklı test script'i yazıldı
+1. ✅ **MMR algorithm integrated**: the MMR algorithm was added for diversity-aware ranking
+2. ✅ **Vector processing fixed**: inconsistent vector formats were standardized
+3. ✅ **Code errors fixed**: indentation, exception handling and normalization problems were solved
+4. ✅ **Test infrastructure created**: 3 different test scripts were written
 
-### 9.2. Kalan İşler
+### 9.2. Remaining work
 
-1. ⚠️ **MMR Sonrası Diversity Hesaplama**: Vektörlerin neden işlenemediğini bulmak ve düzeltmek
-2. ⚠️ **Baseline Diversity İyileştirme**: MMR olmadan bile diversity'yi artırmak
-3. 📝 **Lambda Optimizasyonu**: En iyi lambda değerini bulmak (şu anda test ediliyor ama sonuç vermiyor)
+1. ⚠️ **Diversity computation after MMR**: find and fix why the vectors cannot be processed
+2. ⚠️ **Improving the baseline diversity**: increase diversity even without MMR
+3. 📝 **Lambda optimization**: find the best lambda value (currently being tested but without results)
 
-### 9.3. Öğrenilenler
+### 9.3. Lessons learned
 
-1. **Vektör Formatları Tutarlı Olmalı**: Farklı formatlardaki vektörler sorun çıkarıyor
-2. **Exception Handling Dikkatli Olmalı**: Çok geniş exception handling, gerçek sorunları gizleyebilir
-3. **Test Altyapısı Önemli**: Detaylı test script'leri olmadan sorunları bulmak çok zor
-4. **Diversity Hesaplama Hassas**: Vektör normalizasyonu, similarity hesaplama, her adım kritik
+1. **Vector formats must be consistent**: vectors in different formats cause problems
+2. **Exception handling must be careful**: overly broad exception handling can hide real problems
+3. **Test infrastructure matters**: without detailed test scripts it is very hard to find problems
+4. **The diversity computation is sensitive**: vector normalization, similarity computation, every step is critical
 
-### 9.4. Tavsiyeler
+### 9.4. Recommendations
 
-1. **Kısa Vadede**: MMR sonrası diversity hesaplama sorununu çözmek için detaylı debugging yapılmalı
-2. **Orta Vadede**: Vektör preprocessing pipeline'ını güçlendirmek, tüm vektörleri baştan standardize etmek
-3. **Uzun Vadede**: Daha iyi embedding modeli, hybrid recommendation sistemi, A/B testing altyapısı
+1. **Short term**: detailed debugging should be done to solve the diversity computation problem after MMR
+2. **Medium term**: strengthen the vector preprocessing pipeline and standardize all vectors from the start
+3. **Long term**: a better embedding model, a hybrid recommender system, an A/B testing infrastructure
 
 ---
 
-## 10. Ek Bilgiler
+## 10. Additional Information
 
-### 10.1. Kullanılan Teknolojiler
+### 10.1. Technologies used
 
 - **Python 3.x**
-- **NumPy**: Vektör işlemleri, matematiksel hesaplamalar
-- **Pandas**: DataFrame işlemleri
-- **scikit-learn**: Cosine similarity hesaplama
-- **XLM-RoBERTa**: Embedding modeli (768 boyutlu)
+- **NumPy**: vector operations, mathematical computations
+- **Pandas**: DataFrame operations
+- **scikit-learn**: cosine similarity computation
+- **XLM-RoBERTa**: embedding model (768-dimensional)
 
-### 10.2. Dosya Yapısı
+### 10.2. File structure
 
 ```
-Tubitak_Proje_Yeni/
+EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
 ├── src/
 │   └── scoring/
-│       └── final_ranking.py          # MMR implementasyonu
+│       └── final_ranking.py          # MMR implementation
 ├── config/
-│   └── config.yaml                   # MMR ayarları
-├── test_mmr.py                       # Temel MMR testi
-├── test_mmr_lambda.py                # Lambda optimizasyonu
-├── debug_diversity.py                # Diversity analizi
-└── IP1_Ciktisi_Projeler_Vektorlu.pkl # Vektör dosyası
+│   └── config.yaml                   # MMR settings
+├── test_mmr.py                       # Basic MMR test
+├── test_mmr_lambda.py                # Lambda optimization
+├── debug_diversity.py                # Diversity analysis
+└── IP1_output_listings_vectorized.pkl # Vector file
 ```
 
-### 10.3. Referanslar
+### 10.3. References
 
-- **MMR Algoritması**: Carbonell, J., & Goldstein, J. (1998). The use of MMR, diversity-based reranking for reordering documents and producing summaries.
-- **Diversity Metrics**: Vargas, S., & Castells, P. (2011). Rank and relevance in novelty and diversity metrics for recommendation.
-- **Cosine Similarity**: Scikit-learn documentation
+- **MMR algorithm**: Carbonell, J., & Goldstein, J. (1998). The use of MMR, diversity-based reranking for reordering documents and producing summaries.
+- **Diversity metrics**: Vargas, S., & Castells, P. (2011). Rank and relevance in novelty and diversity metrics for recommendation.
+- **Cosine similarity**: scikit-learn documentation
 
 ---
 
-**Rapor Tarihi**: 31 Aralık 2025  
-**Hazırlayan**: AI Assistant (Cursor)  
-**Proje**: TÜBİTAK Öneri Sistemi - MMR Entegrasyonu
+**Report date**: 31 December 2025  
+**Prepared by**: AI Assistant (Cursor)  
+**Project**: TUBITAK Recommender System - MMR Integration

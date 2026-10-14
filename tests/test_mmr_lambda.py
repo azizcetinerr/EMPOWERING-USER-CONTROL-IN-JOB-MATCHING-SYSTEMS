@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MMR Lambda parametresi test script'i
-Farklı lambda değerleri ile MMR'ı test eder ve en iyi Diversity Score'u bulur
+MMR lambda parameter test script
+Tests MMR with different lambda values and finds the best Diversity Score
 """
 
 import sys
@@ -11,7 +11,7 @@ import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Proje root'unu bul
+# Find the project root
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
@@ -20,50 +20,50 @@ from src.utils.logger import setup_logger
 from src.scoring.final_ranking import FinalRankingCalculator
 
 def test_different_lambdas():
-    """Farklı lambda değerleri ile MMR'ı test et"""
+    """Test MMR with different lambda values"""
     print("=" * 80)
-    print("🔍 MMR LAMBDA PARAMETRESİ TEST")
+    print("🔍 MMR LAMBDA PARAMETER TEST")
     print("=" * 80)
     
-    # Config yükle
+    # Load the config
     config_path = project_root / "config" / "config.yaml"
     config = load_config(str(config_path))
     
-    # Logger ayarla
+    # Set up the logger
     logger_config = config.get('logging', {})
     logger = setup_logger(
-        name=logger_config.get('name', 'tubitak_proje'),
+        name=logger_config.get('name', 'tubitak_project'),
         log_level=logger_config.get('level', 'INFO'),
-        log_file=logger_config.get('file', 'logs/proje.log'),
-        console=False,  # Sessiz mod
+        log_file=logger_config.get('file', 'logs/project.log'),
+        console=False,  # Silent mode
         log_format=logger_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     )
     
-    # MMR ayarlarını kontrol et
+    # Check the MMR settings
     mmr_config = config.get('diversity_aware_ranking', {})
     mmr_top_k = mmr_config.get('top_k', 10)
     
-    # Mevcut sonuçları yükle
-    csv_file = project_root / "outputs" / "results" / "IP5_Nihai_Adil_Siralama.csv"
+    # Load the existing results
+    csv_file = project_root / "outputs" / "results" / "IP5_final_fair_ranking.csv"
     if not csv_file.exists():
-        print(f"\n❌ Sonuç dosyası bulunamadı: {csv_file}")
+        print(f"\n❌ Result file not found: {csv_file}")
         return
     
-    print(f"\n📂 Sonuçlar yükleniyor: {csv_file}")
+    print(f"\n📂 Loading results: {csv_file}")
     df_ranked = pd.read_csv(csv_file)
-    print(f"✅ {len(df_ranked)} proje yüklendi")
+    print(f"✅ {len(df_ranked)} projects loaded")
     
-    # Vektörleri yükle
+    # Load the vectors
     vector_files = [
-        project_root / "IP1_Ciktisi_Projeler_Vektorlu.pkl",
-        project_root / "outputs" / "processed" / "IP1_Ciktisi_Projeler_Vektorlu.pkl",
-        project_root / "outputs" / "IP1_Ciktisi_Projeler_Vektorlu.pkl",
+        project_root / "IP1_output_listings_vectorized.pkl",
+        project_root / "outputs" / "processed" / "IP1_output_listings_vectorized.pkl",
+        project_root / "outputs" / "IP1_output_listings_vectorized.pkl",
     ]
     
     vectors_loaded = False
     for vector_file in vector_files:
         if vector_file.exists():
-            print(f"\n📂 Vektörler yükleniyor: {vector_file}")
+            print(f"\n📂 Loading vectors: {vector_file}")
             try:
                 with open(vector_file, 'rb') as f:
                     vectors_data = pickle.load(f)
@@ -83,17 +83,17 @@ def test_different_lambdas():
                                 return v
                         return None
                     
-                    df_ranked['beceri_vektorleri'] = df_ranked['link'].apply(get_vector)
-                    vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                    print(f"✅ Vektörler yüklendi: {vectors_loaded_count}/{len(df_ranked)} projede vektör var")
+                    df_ranked['skill_vectors'] = df_ranked['link'].apply(get_vector)
+                    vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                    print(f"✅ Vectors loaded: {vectors_loaded_count}/{len(df_ranked)} projects have vectors")
                     vectors_loaded = True
                     break
                 elif isinstance(vectors_data, pd.DataFrame):
-                    if 'link' in vectors_data.columns and 'beceri_vektorleri' in vectors_data.columns:
-                        if 'beceri_vektorleri' in df_ranked.columns:
-                            df_ranked = df_ranked.drop(columns=['beceri_vektorleri'])
-                        # Merge yaparken link'leri string'e çevir (uyumsuzluk olmasın)
-                        vectors_df = vectors_data[['link', 'beceri_vektorleri']].copy()
+                    if 'link' in vectors_data.columns and 'skill_vectors' in vectors_data.columns:
+                        if 'skill_vectors' in df_ranked.columns:
+                            df_ranked = df_ranked.drop(columns=['skill_vectors'])
+                        # Convert the links to strings when merging (to avoid mismatches)
+                        vectors_df = vectors_data[['link', 'skill_vectors']].copy()
                         vectors_df['link'] = vectors_df['link'].astype(str)
                         df_ranked['link'] = df_ranked['link'].astype(str)
                         df_ranked = df_ranked.merge(
@@ -101,41 +101,41 @@ def test_different_lambdas():
                             on='link',
                             how='left'
                         )
-                        vectors_loaded_count = df_ranked['beceri_vektorleri'].notna().sum()
-                        print(f"✅ Vektörler yüklendi: {vectors_loaded_count}/{len(df_ranked)} projede vektör var")
+                        vectors_loaded_count = df_ranked['skill_vectors'].notna().sum()
+                        print(f"✅ Vectors loaded: {vectors_loaded_count}/{len(df_ranked)} projects have vectors")
                         vectors_loaded = True
                         break
             except Exception as e:
                 continue
     
-    if not vectors_loaded or 'beceri_vektorleri' not in df_ranked.columns:
-        print("❌ Vektörler yüklenemedi!")
+    if not vectors_loaded or 'skill_vectors' not in df_ranked.columns:
+        print("❌ Could not load the vectors!")
         return
     
-    # FinalRankingCalculator oluştur
+    # Create the FinalRankingCalculator
     ranking_calc = FinalRankingCalculator(config, logger)
     
-    # Farklı lambda değerlerini test et (0.0 = sadece diversity)
+    # Test different lambda values (0.0 = diversity only)
     lambda_values = [0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.0]
     
     print("\n" + "=" * 80)
-    print("📊 LAMBDA DEĞERLERİ TEST EDİLİYOR")
+    print("📊 TESTING LAMBDA VALUES")
     print("=" * 80)
-    print(f"{'Lambda':<10} {'Diversity':<12} {'Relevance':<12} {'Değişim':<12} {'Not'}")
+    print(f"{'Lambda':<10} {'Diversity':<12} {'Relevance':<12} {'Change':<12} {'Note'}")
     print("-" * 80)
     
     baseline_diversity = 0.0
     baseline_relevance = 0.0
     
-    # Önce baseline (MMR olmadan)
+    # First the baseline (without MMR)
     baseline_relevance, baseline_diversity, _, _, _ = ranking_calc.calculate_performance_metrics(
         df_ranked,
         top_k=5,
-        vector_column="beceri_vektorleri",
-        m_score_column="M_Skoru"
+        vector_column="skill_vectors",
+        m_score_column="M_Score"
     )
     
-    print(f"{'Baseline':<10} {baseline_diversity:<12.4f} {baseline_relevance:<12.2f} {'-':<12} {'MMR yok'}")
+    print(f"{'Baseline':<10} {baseline_diversity:<12.4f} {baseline_relevance:<12.2f} {'-':<12} {'No MMR'}")
     
     best_lambda = None
     best_diversity = baseline_diversity
@@ -143,20 +143,20 @@ def test_different_lambdas():
     results = []
     
     for lambda_val in lambda_values:
-        # MMR uygula
+        # Apply MMR
         df_mmr = ranking_calc._apply_mmr_ranking(
             df_ranked.copy(),
             top_k=mmr_top_k,
             lambda_param=lambda_val,
-            vector_column="beceri_vektorleri"
+            vector_column="skill_vectors"
         )
         
-        # Metrikleri hesapla
+        # Compute the metrics
         relevance, diversity, _, _, _ = ranking_calc.calculate_performance_metrics(
             df_mmr,
             top_k=5,
-            vector_column="beceri_vektorleri",
-            m_score_column="M_Skoru"
+            vector_column="skill_vectors",
+            m_score_column="M_Score"
         )
         
         diversity_change = diversity - baseline_diversity
@@ -174,31 +174,31 @@ def test_different_lambdas():
         if diversity > best_diversity:
             best_diversity = diversity
             best_lambda = lambda_val
-            note = "⭐ EN İYİ"
+            note = "⭐ BEST"
         elif diversity == baseline_diversity:
-            note = "⚠️  Değişmedi"
+            note = "⚠️  Unchanged"
         
         print(f"{lambda_val:<10.1f} {diversity:<12.4f} {relevance:<12.2f} {diversity_change:+.4f}      {note}")
     
-    # Özet
+    # Summary
     print("\n" + "=" * 80)
-    print("📈 SONUÇ ÖZETİ")
+    print("📈 RESULT SUMMARY")
     print("=" * 80)
     
     if best_lambda is not None and best_diversity > baseline_diversity:
-        print(f"✅ En iyi Lambda: {best_lambda}")
+        print(f"✅ Best lambda: {best_lambda}")
         print(f"   Diversity Score: {baseline_diversity:.4f} → {best_diversity:.4f} ({best_diversity - baseline_diversity:+.4f})")
-        print(f"\n💡 Önerilen config ayarı:")
+        print(f"\n💡 Recommended config setting:")
         print(f"   diversity_aware_ranking:")
         print(f"     enabled: true")
         print(f"     top_k: {mmr_top_k}")
-        print(f"     lambda: {best_lambda}  # En iyi Diversity Score için")
+        print(f"     lambda: {best_lambda}  # For the best Diversity Score")
     else:
-        print("⚠️  Hiçbir lambda değeri Diversity Score'u artıramadı")
-        print("   Bu durum, top-K projelerin gerçekten çok benzer olduğunu gösterir")
-        print("   Lambda değerini daha da düşürmeyi deneyin (0.1, 0.05, 0.0) veya top_k'yı artırın")
+        print("⚠️  No lambda value increased the Diversity Score")
+        print("   This shows that the top-K projects really are very similar")
+        print("   Try lowering lambda further (0.1, 0.05, 0.0) or increasing top_k")
     
-    print("\n✅ Test tamamlandı!")
+    print("\n✅ Test completed!")
 
 if __name__ == "__main__":
     test_different_lambdas()

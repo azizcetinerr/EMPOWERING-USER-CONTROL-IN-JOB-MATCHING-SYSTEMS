@@ -1,5 +1,5 @@
 """
-Proje detay sayfalarından açıklamaları çeken modül
+Module that fetches descriptions from project detail pages
 """
 
 import requests
@@ -13,12 +13,12 @@ from ..utils.data_cleaner import clean_project_descriptions
 
 
 class ProjectDetailScraper:
-    """Proje detay sayfalarını çeken sınıf"""
+    """Class that fetches project detail pages"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
@@ -32,14 +32,14 @@ class ProjectDetailScraper:
     
     def extract_project_info(self, detail_url: str, retries: int = None) -> Dict:
         """
-        URL'den proje bilgilerini çıkarır (açıklama + kurum bilgileri).
+        Extracts project information from a URL (description + organization information).
         
         Args:
-            detail_url: Proje detay URL'i
-            retries: Yeniden deneme sayısı (None ise config'den alır)
+            detail_url: Project detail URL
+            retries: Number of retries (if None, read from the config)
         
         Returns:
-            Proje bilgileri sözlüğü
+            Project information dictionary
         """
         if retries is None:
             retries = self.retry_count
@@ -51,7 +51,7 @@ class ProjectDetailScraper:
             soup = BeautifulSoup(response.content, "html.parser")
             content_cards = soup.find_all("div", class_="card-content")
             
-            # Proje başlığını çıkar (h1 veya h2 içinde)
+            # Extract the project title (inside h1 or h2)
             project_title = None
             h1_title = soup.find("h1")
             if h1_title:
@@ -61,17 +61,17 @@ class ProjectDetailScraper:
                 if h2_title:
                     project_title = h2_title.get_text(strip=True)
             
-            # Eğer başlık bulunamazsa, dil kodlarını temizleyerek URL'den çıkar
+            # If no title is found, derive it from the URL after removing language codes
             if not project_title or len(project_title) < 5:
-                # URL'den proje ID'sini al ve title olarak kullan (son çare)
+                # Take the project ID from the URL and use it as the title (last resort)
                 import re
                 match = re.search(r'/(\d+)_', detail_url)
                 if match:
                     project_title = f"Project {match.group(1)}"
                 else:
-                    project_title = "Proje Başlığı Bulunamadı"
+                    project_title = "Project title not found"
             
-            # Açıklama
+            # Description
             full_description_text = ""
             for card in content_cards:
                 h6_header = card.find("h6")
@@ -79,29 +79,29 @@ class ProjectDetailScraper:
                     all_paragraphs = card.find_all("p")
                     for p in all_paragraphs:
                         text = p.text.strip()
-                        # Dil kodlarını ve gereksiz metinleri temizle
-                        # BGбългарскиCSčeština gibi dil kodlarını atla
+                        # Remove language codes and unnecessary text
+                        # Skip language codes such as BGбългарскиCSčeština
                         if len(text) < 200 and any(chr.isalpha() and ord(chr) > 127 for chr in text[:10]):
-                            # Muhtemelen dil kodu veya çok kısa metin, atla
+                            # Probably a language code or a very short text, skip
                             continue
-                        # Çok kısa veya anlamsız metinleri atla
+                        # Skip very short or meaningless texts
                         if text and len(text) > 20:
                             full_description_text += text + "\n\n"
                     break
             
-            # Kurum bilgilerini çek
+            # Fetch the organization information
             organization_name = None
             verified = False
             address = None
             website = None
             
-            # Organization/Hosting organization bilgisini ara
+            # Look for the Organization/Hosting organization information
             for card in content_cards:
                 h6_header = card.find("h6")
                 if h6_header:
                     header_text = h6_header.text.lower()
                     if "organization" in header_text or "hosting" in header_text:
-                        # Kurum adını bul
+                        # Find the organization name
                         org_elements = card.find_all(["p", "span", "div"])
                         for elem in org_elements:
                             text = elem.text.strip()
@@ -110,12 +110,12 @@ class ProjectDetailScraper:
                                 break
                         break
             
-            # Verified badge/icon ara
+            # Look for a verified badge/icon
             verified_indicators = soup.find_all(string=lambda t: t and ("verified" in t.lower() or "certified" in t.lower()))
             if verified_indicators:
                 verified = True
             
-            # Address bilgisi ara
+            # Look for the address information
             for card in content_cards:
                 h6_header = card.find("h6")
                 if h6_header and ("address" in h6_header.text.lower() or "location" in h6_header.text.lower()):
@@ -124,41 +124,41 @@ class ProjectDetailScraper:
                         address = address_elem.text.strip()
                     break
             
-            # Website bilgisi ara
+            # Look for the website information
             website_links = soup.find_all("a", href=True)
             for link in website_links:
                 href = link.get("href", "")
                 if href and ("http" in href or "www" in href):
-                    # Kurum web sitesi olabilir
+                    # Could be the organization's website
                     if "youth.europa.eu" not in href and "europa.eu" not in href:
                         website = href
                         break
             
-            # Proje yayın tarihini çek (created div'inden)
+            # Fetch the project publication date (from the created div)
             published_date = None
             created_divs = soup.find_all("div", class_=lambda x: x and "created" in str(x).lower())
             for div in created_divs:
                 span = div.find("span")
                 if span:
                     date_text = span.get_text(strip=True)
-                    # "Today", "1 day ago", "2 days ago" gibi ifadeleri parse et
+                    # Parse expressions such as "Today", "1 day ago", "2 days ago"
                     published_date = self._parse_relative_date(date_text)
                     if published_date:
                         break
             
-            # Son başvuru tarihini çek (deadline, application deadline, expires vb.)
+            # Fetch the application deadline (deadline, application deadline, expires, etc.)
             application_deadline = None
-            # Önce "deadline", "application deadline", "expires", "closing date" gibi başlıkları ara
+            # First look for headings such as "deadline", "application deadline", "expires", "closing date"
             for card in content_cards:
                 h6_header = card.find("h6")
                 if h6_header:
                     header_text = h6_header.text.lower()
                     if any(keyword in header_text for keyword in ["deadline", "expires", "closing", "application"]):
-                        # Tarih bilgisini bul
+                        # Find the date information
                         date_elements = card.find_all(["p", "span", "div"])
                         for elem in date_elements:
                             text = elem.get_text(strip=True)
-                            # Tarih formatlarını kontrol et (YYYY-MM-DD, DD/MM/YYYY, vb.)
+                            # Check date formats (YYYY-MM-DD, DD/MM/YYYY, etc.)
                             parsed_date = self._parse_date_string(text)
                             if parsed_date:
                                 application_deadline = parsed_date
@@ -166,17 +166,17 @@ class ProjectDetailScraper:
                         if application_deadline:
                             break
             
-            # Eğer card'larda bulunamadıysa, genel arama yap
+            # If not found in the cards, run a general search
             if not application_deadline:
-                # "Deadline:", "Expires:", "Closes:" gibi etiketleri ara
+                # Look for labels such as "Deadline:", "Expires:", "Closes:"
                 deadline_keywords = ["deadline", "expires", "closes", "application deadline", "closing date"]
                 all_text = soup.get_text()
                 for keyword in deadline_keywords:
                     if keyword.lower() in all_text.lower():
-                        # Keyword'den sonraki tarih bilgisini bul
+                        # Find the date information after the keyword
                         keyword_index = all_text.lower().find(keyword.lower())
                         if keyword_index >= 0:
-                            # Keyword'den sonraki 50 karakter içinde tarih ara
+                            # Look for a date within 50 characters after the keyword
                             text_after_keyword = all_text[keyword_index:keyword_index+100]
                             parsed_date = self._parse_date_string(text_after_keyword)
                             if parsed_date:
@@ -184,26 +184,26 @@ class ProjectDetailScraper:
                         break
             
             return {
-                "proje_adi": project_title,
-                "tam_aciklama": full_description_text.strip() if full_description_text else "AÇIKLAMA BULUNAMADI",
+                "project_name": project_title,
+                "full_description": full_description_text.strip() if full_description_text else "DESCRIPTION NOT FOUND",
                 "organization_name": organization_name,
                 "verified": verified,
                 "address": address,
                 "website": website,
                 "published_date": published_date.isoformat() if published_date else None,
                 "application_deadline": application_deadline.isoformat() if application_deadline else None,
-                "scraped_at": None  # Bu normal scraper'da scraping zamanı eklenmeyecek, sadece published_date kullanılacak
+                "scraped_at": None  # This regular scraper does not add the scraping time; only published_date is used
             }
             
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429 and retries > 0:
-                self.logger.warning(f"429 Hatası! {self.retry_delay} saniye bekleniyor... (URL: {detail_url})")
+                self.logger.warning(f"429 error! Waiting {self.retry_delay} seconds... (URL: {detail_url})")
                 time.sleep(self.retry_delay)
                 return self.extract_project_info(detail_url, retries - 1)
             else:
                 return {
-                    "proje_adi": f"Proje {detail_url.split('/')[-1].split('_')[0]}",
-                    "tam_aciklama": f"HATA: {e.response.status_code} Hatası",
+                    "project_name": f"Project {detail_url.split('/')[-1].split('_')[0]}",
+                    "full_description": f"ERROR: {e.response.status_code} error",
                     "organization_name": None,
                     "verified": False,
                     "address": None,
@@ -213,10 +213,10 @@ class ProjectDetailScraper:
                     "scraped_at": None
                 }
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Bağlantı hatası ({detail_url}): {e}")
+            self.logger.error(f"Connection error ({detail_url}): {e}")
             return {
-                "proje_adi": f"Proje {detail_url.split('/')[-1].split('_')[0]}",
-                "tam_aciklama": "HATA: Bağlantı Hatası",
+                "project_name": f"Project {detail_url.split('/')[-1].split('_')[0]}",
+                "full_description": "ERROR: Connection error",
                 "organization_name": None,
                 "verified": False,
                 "address": None,
@@ -228,13 +228,13 @@ class ProjectDetailScraper:
     
     def _parse_relative_date(self, date_text: str):
         """
-        "Today", "1 day ago", "2 days ago" gibi ifadeleri gerçek tarihe çevirir.
+        Converts expressions such as "Today", "1 day ago", "2 days ago" into actual dates.
         
         Args:
-            date_text: Tarih metni (örn: "Today", "1 day ago", "2 days ago")
+            date_text: Date text (e.g. "Today", "1 day ago", "2 days ago")
         
         Returns:
-            datetime objesi veya None
+            datetime object or None
         """
         from datetime import datetime, timedelta
         import re
@@ -244,49 +244,49 @@ class ProjectDetailScraper:
         if "today" in date_text:
             return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X day(s) ago" formatını parse et
+        # Parse the "X day(s) ago" format
         match = re.search(r'(\d+)\s*(day|days)\s*ago', date_text)
         if match:
             days_ago = int(match.group(1))
             return (datetime.now() - timedelta(days=days_ago)).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X week(s) ago" formatını parse et
+        # Parse the "X week(s) ago" format
         match = re.search(r'(\d+)\s*(week|weeks)\s*ago', date_text)
         if match:
             weeks_ago = int(match.group(1))
             return (datetime.now() - timedelta(weeks=weeks_ago)).replace(hour=0, minute=0, second=0, microsecond=0)
         
-        # "X month(s) ago" formatını parse et
+        # Parse the "X month(s) ago" format
         match = re.search(r'(\d+)\s*(month|months)\s*ago', date_text)
         if match:
             months_ago = int(match.group(1))
-            # Yaklaşık olarak 30 gün = 1 ay
+            # Approximately 30 days = 1 month
             return (datetime.now() - timedelta(days=months_ago * 30)).replace(hour=0, minute=0, second=0, microsecond=0)
         
         return None
     
     def _parse_date_string(self, date_text: str):
         """
-        Farklı formatlardaki tarih metinlerini parse eder.
+        Parses date texts in different formats.
         
         Args:
-            date_text: Tarih metni (örn: "2024-12-31", "31/12/2024", "December 31, 2024")
+            date_text: Date text (e.g. "2024-12-31", "31/12/2024", "December 31, 2024")
         
         Returns:
-            datetime objesi veya None
+            datetime object or None
         """
         from datetime import datetime
         import re
         
         date_text = date_text.strip()
         
-        # YYYY-MM-DD formatı
+        # YYYY-MM-DD format
         try:
             return datetime.strptime(date_text[:10], "%Y-%m-%d")
         except:
             pass
         
-        # DD/MM/YYYY veya MM/DD/YYYY formatı
+        # DD/MM/YYYY or MM/DD/YYYY format
         date_pattern = r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})'
         match = re.search(date_pattern, date_text)
         if match:
@@ -296,7 +296,7 @@ class ProjectDetailScraper:
             except:
                 pass
         
-        # "December 31, 2024" formatı
+        # "December 31, 2024" format
         try:
             return datetime.strptime(date_text[:20], "%B %d, %Y")
         except:
@@ -311,71 +311,71 @@ class ProjectDetailScraper:
     
     def extract_project_description(self, detail_url: str, retries: int = None) -> str:
         """
-        URL'den proje açıklamasını çıkarır (geriye uyumluluk için).
+        Extracts the project description from a URL (for backward compatibility).
         
         Args:
-            detail_url: Proje detay URL'i
-            retries: Yeniden deneme sayısı (None ise config'den alır)
+            detail_url: Project detail URL
+            retries: Number of retries (if None, read from the config)
         
         Returns:
-            Proje açıklama metni
+            Project description text
         """
         info = self.extract_project_info(detail_url, retries)
-        return info.get("tam_aciklama", "AÇIKLAMA BULUNAMADI")
+        return info.get("full_description", "DESCRIPTION NOT FOUND")
     
     def scrape_all_projects(self, links: List[str]) -> pd.DataFrame:
         """
-        Tüm proje linklerinden detayları çeker.
+        Fetches details from all project links.
         
         Args:
-            links: Proje link listesi
+            links: List of project links
         
         Returns:
-            Proje detayları DataFrame
+            Project details DataFrame
         """
-        self.logger.info(f"{len(links)} adet proje detayı çekiliyor...")
+        self.logger.info(f"Fetching {len(links)} project details...")
         
-        proje_verileri = []
-        basarisiz_linkler = 0
+        project_records = []
+        failed_links = 0
         
         for i, link in enumerate(links):
-            self.logger.info(f"İşleniyor... ({i+1}/{len(links)}) - {link}")
+            self.logger.info(f"Processing... ({i+1}/{len(links)}) - {link}")
             
             project_info = self.extract_project_info(link)
             
-            if "HATA" in project_info.get("tam_aciklama", "") or "BULUNAMADI" in project_info.get("tam_aciklama", ""):
-                self.logger.warning(f"Bu ilan atlanıyor: {link} (Sebep: {project_info.get('tam_aciklama', '')[:50]}...)")
-                basarisiz_linkler += 1
+            if "ERROR" in project_info.get("full_description", "") or "NOT FOUND" in project_info.get("full_description", ""):
+                self.logger.warning(f"Skipping this listing: {link} (Reason: {project_info.get('full_description', '')[:50]}...)")
+                failed_links += 1
             
             from datetime import datetime
-            proje_verileri.append({
+            project_records.append({
                 "link": link,
-                "proje_adi": project_info.get("proje_adi", f"Proje {link.split('/')[-1].split('_')[0]}"),
-                "tam_aciklama": project_info.get("tam_aciklama", ""),
+                "project_name": project_info.get("project_name", f"Project {link.split('/')[-1].split('_')[0]}"),
+                "full_description": project_info.get("full_description", ""),
                 "organization_name": project_info.get("organization_name"),
                 "verified": project_info.get("verified", False),
                 "address": project_info.get("address"),
                 "website": project_info.get("website"),
-                "published_date": project_info.get("published_date"),  # Gerçek yayın tarihi
-                "application_deadline": project_info.get("application_deadline"),  # Son başvuru tarihi
-                "scraped_at": datetime.now().isoformat()  # Scraping zamanı
+                "published_date": project_info.get("published_date"),  # Actual publication date
+                "application_deadline": project_info.get("application_deadline"),  # Application deadline
+                "scraped_at": datetime.now().isoformat()  # Scraping time
             })
             
             # Rate limiting
             time.sleep(self.request_delay)
             
-            # İlerleme raporu
+            # Progress report
             if (i + 1) % 50 == 0:
-                self.logger.info(f"İlerleme: {i+1}/{len(links)} proje işlendi")
+                self.logger.info(f"Progress: {i+1}/{len(links)} projects processed")
         
-        df_projeler = pd.DataFrame(proje_verileri)
+        df_projects = pd.DataFrame(project_records)
         
-        # Veri temizleme
-        df_projeler = clean_project_descriptions(df_projeler)
+        # Data cleaning
+        df_projects = clean_project_descriptions(df_projects)
         
-        self.logger.info(f"Toplam {len(df_projeler)} proje ilanı işlendi")
-        if basarisiz_linkler > 0:
-            self.logger.warning(f"{basarisiz_linkler} adet ilanın detay sayfası çekilemedi")
+        self.logger.info(f"{len(df_projects)} project listings processed in total")
+        if failed_links > 0:
+            self.logger.warning(f"Could not fetch the detail page of {failed_links} listings")
         
-        return df_projeler
+        return df_projects
 

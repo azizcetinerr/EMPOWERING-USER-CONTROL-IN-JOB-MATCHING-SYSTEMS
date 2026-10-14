@@ -1,6 +1,6 @@
 """
-Youth Portal'dan proje ilanlarını çeken modül
-API endpoint kullanarak çok daha hızlı veri toplama
+Module that collects project listings from the Youth Portal
+Much faster data collection through the API endpoint
 """
 
 import requests
@@ -13,35 +13,35 @@ from ..utils.data_cleaner import remove_duplicate_links
 
 
 class YouthPortalScraper:
-    """Youth Portal API scraper sınıfı"""
+    """Youth Portal API scraper class"""
     
     def __init__(self, config: dict, logger: logging.Logger = None):
         """
         Args:
-            config: Konfigürasyon sözlüğü
+            config: Configuration dictionary
             logger: Logger instance
         """
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
-        # API ayarları
+        # API settings
         self.base_url = config['data_sources']['youth_portal']['base_url']
         self.use_api = config['data_sources']['youth_portal'].get('use_api', True)
         
-        # Requests ayarları
+        # Requests settings
         scraping_config = config.get('scraping', {}).get('requests', {})
         self.retry_count = scraping_config.get('retry_count', 5)
         self.retry_delay = scraping_config.get('retry_delay', 10)
         self.request_delay = scraping_config.get('request_delay', 1)
         self.timeout = scraping_config.get('timeout', 30)
         
-        # API endpoint - bugünün tarihini kullanarak aktif projeleri al
+        # API endpoint - fetch active projects using today's date
         today = datetime.now().strftime('%Y-%m-%d')
         api_base = config['data_sources']['youth_portal'].get('api_url', 'https://youth.europa.eu/api/rest/eyp/v1/search_en')
         self.api_url = (
             f"{api_base}"
             f"?type=Opportunity"
-            f"&size=1000"  # Maksimum proje sayısı (API limiti)
+            f"&size=1000"  # Maximum number of projects (API limit)
             f"&from=0"
             f"&filters[status]=open"
             f"&filters[date_end][operator]=>="
@@ -80,43 +80,43 @@ class YouthPortalScraper:
     
     def get_project_links(self, cached_api_data: Optional[Dict] = None) -> List[str]:
         """
-        API'den tüm proje linklerini çeker (veya cache'den).
+        Fetches all project links from the API (or from the cache).
         
         Args:
-            cached_api_data: Eğer verilirse, API isteği yapmak yerine bu veriyi kullanır
+            cached_api_data: If given, this data is used instead of sending an API request
         
         Returns:
-            Proje link listesi
+            List of project links
         """
         try:
-            # Cache'lenmiş veri varsa onu kullan
+            # Use cached data if available
             if cached_api_data is not None:
-                self.logger.info("📦 Cache'lenmiş API verileri kullanılıyor (API isteği atlanıyor)")
+                self.logger.info("📦 Using cached API data (skipping API request)")
                 response = cached_api_data
             else:
-                self.logger.info(f"🚀 API'den proje listesi alınıyor: {self.api_url}")
-                # API'den veri çek
+                self.logger.info(f"🚀 Fetching project list from the API: {self.api_url}")
+                # Fetch data from the API
                 response = self._fetch_api_data()
             
             if not response:
-                self.logger.error("API'den veri alınamadı")
+                self.logger.error("Could not fetch data from the API")
                 return []
             
-            # Proje linklerini oluştur
+            # Build the project links
             links = self._extract_links_from_api(response)
             
-            # Duplicate'leri kaldır
+            # Remove duplicates
             links = remove_duplicate_links(links)
             
-            self.logger.info(f"✅ Toplam {len(links)} adet benzersiz proje linki bulundu")
+            self.logger.info(f"✅ Found {len(links)} unique project links in total")
             return links
             
         except Exception as e:
-            self.logger.error(f"Link toplama hatası: {e}", exc_info=True)
+            self.logger.error(f"Link collection error: {e}", exc_info=True)
             raise
     
     def _fetch_api_data(self) -> Optional[Dict]:
-        """API'den veri çeker (retry mekanizması ile)"""
+        """Fetches data from the API (with a retry mechanism)"""
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'Accept': 'application/json'
@@ -124,7 +124,7 @@ class YouthPortalScraper:
         
         for attempt in range(self.retry_count):
             try:
-                self.logger.debug(f"API isteği gönderiliyor (deneme {attempt + 1}/{self.retry_count})...")
+                self.logger.debug(f"Sending API request (attempt {attempt + 1}/{self.retry_count})...")
                 response = requests.get(
                     self.api_url,
                     headers=headers,
@@ -134,41 +134,41 @@ class YouthPortalScraper:
                 if response.status_code == 200:
                     data = response.json()
                     total = data.get('hits', {}).get('total', {}).get('value', 0)
-                    self.logger.info(f"✅ API'den {total} proje bulundu")
+                    self.logger.info(f"✅ Found {total} projects in the API")
                     return data
                 elif response.status_code == 429:
                     wait_time = self.retry_delay * (attempt + 1)
-                    self.logger.warning(f"⚠️  Rate limit (429). {wait_time} saniye bekleniyor...")
+                    self.logger.warning(f"⚠️  Rate limit (429). Waiting {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
-                    self.logger.warning(f"⚠️  API hatası: {response.status_code}. {self.retry_delay} saniye bekleniyor...")
+                    self.logger.warning(f"⚠️  API error: {response.status_code}. Waiting {self.retry_delay} seconds...")
                     time.sleep(self.retry_delay)
                     
             except requests.exceptions.Timeout:
-                self.logger.warning(f"⚠️  Timeout hatası (deneme {attempt + 1}/{self.retry_count})")
+                self.logger.warning(f"⚠️  Timeout error (attempt {attempt + 1}/{self.retry_count})")
                 if attempt < self.retry_count - 1:
                     time.sleep(self.retry_delay)
             except Exception as e:
-                self.logger.warning(f"⚠️  API isteği hatası: {e} (deneme {attempt + 1}/{self.retry_count})")
+                self.logger.warning(f"⚠️  API request error: {e} (attempt {attempt + 1}/{self.retry_count})")
                 if attempt < self.retry_count - 1:
                     time.sleep(self.retry_delay)
         
-        self.logger.error("❌ API'den veri alınamadı (tüm denemeler başarısız)")
+        self.logger.error("❌ Could not fetch data from the API (all attempts failed)")
         return None
     
     def _extract_links_from_api(self, api_data: Dict) -> List[str]:
-        """API yanıtından proje linklerini çıkarır"""
+        """Extracts project links from the API response"""
         links = []
         
         hits = api_data.get('hits', {}).get('hits', [])
-        self.logger.info(f"📋 {len(hits)} proje işleniyor...")
+        self.logger.info(f"📋 Processing {len(hits)} projects...")
         
         for hit in hits:
             source = hit.get('_source', {})
             opid = source.get('opid')
             
             if opid:
-                # Proje URL'sini oluştur: https://youth.europa.eu/solidarity/opportunity/{opid}_en
+                # Build the project URL: https://youth.europa.eu/solidarity/opportunity/{opid}_en
                 link = f"{self.base_url}/solidarity/opportunity/{opid}_en"
                 links.append(link)
         
@@ -176,10 +176,10 @@ class YouthPortalScraper:
     
     def get_project_data_from_api(self) -> Optional[Dict]:
         """
-        API'den ham proje verilerini döndürür (sadece link değil, tüm metadata)
+        Returns the raw project data from the API (all metadata, not only links)
         
         Returns:
-            API yanıtı dict veya None
+            API response dict or None
         """
         return self._fetch_api_data()
 
