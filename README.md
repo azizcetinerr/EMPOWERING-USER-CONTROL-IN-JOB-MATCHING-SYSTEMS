@@ -26,8 +26,14 @@ EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
 ├── outputs/                # Outputs and reports
 ├── notebooks/              # Analysis notebooks
 ├── PAPER/                  # Paper reproducibility scripts
-└── web/                    # (Optional) web interface
+├── web/                    # (Optional) web interface
+├── web_public/             # Public release of the web interface with user data collection
+├── skill_db_relax_20.json  # SkillNER skill database used for the reported run
+└── token_dist.json         # SkillNER token distribution used for the reported run
 ```
+
+SkillNER reads `skill_db_relax_20.json` and `token_dist.json` from the working directory and downloads them
+if they are missing, so run the scripts from the repository root to use the versions stored here.
 
 ## 🛠 Installation
 
@@ -98,3 +104,7 @@ python PAPER/recompute_sincerity.py
 ```
 
 The curriculum vitae is not shared because it contains personal data.
+
+## 📜 License
+
+The code is released under the [MIT License](LICENSE).

@@ -468,7 +468,7 @@ if std == 0 or np.isnan(std) or np.isinf(std):
 
 1. **SkillNER**: skill extraction
    - Model: `en_core_web_lg` (spaCy)
-   - Database: `skill_db_relax_20.json`
+   - Database: SkillNER built-in skill database (`SKILL_DB`)
 
 2. **XLM-RoBERTa**: vectorization
    - Model: `xlm-roberta-base`

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMPOWERING USER CONTROL IN JOB MATCHING SYSTEMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .help-text {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .progress-container.active {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .progress-message {
+            text-align: center;
+            color: #666;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .progress-time {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .error-message {
+            display: none;
+            padding: 15px;
+            background: #fee;
+            border: 2px solid #fcc;
+            border-radius: 10px;
+            color: #c33;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .error-message.active {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-message {
+            display: none;
+            padding: 15px;
+            background: #efe;
+            border: 2px solid #cfc;
+            border-radius: 10px;
+            color: #3c3;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .success-message.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .example-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .example-link:hover {
+            text-decoration: underline;
+        }
+
+        .consent-box {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            background: #f7f7fb;
+            border: 1px solid #e6e3f7;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+            font-size: 0.88em;
+            color: #555;
+            line-height: 1.5;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+        .consent-box input {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .consent-box details summary {
+            cursor: pointer;
+            color: #667eea;
+            margin-top: 4px;
+        }
+
+        .counter {
+            text-align: center;
+            color: #888;
+            font-size: 0.88em;
+            margin-top: 18px;
+            min-height: 1.2em;
+        }
+
+        .footer-info {
+            text-align: center;
+            color: #aaa;
+            font-size: 0.78em;
+            margin-top: 14px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 CV Matching System</h1>
+        <p class="subtitle">Enter your Europass CV link and we will find the projects that suit you best</p>
+
+        <form id="cvForm">
+            <div class="form-group">
+                <label for="cvUrl">Europass CV link</label>
+                <input 
+                    type="url" 
+                    id="cvUrl" 
+                    name="cvUrl" 
+                    placeholder="https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/..."
+                    required
+                >
+                <div class="help-text">
+                    Paste the sharing link of your Europass CV here.
+                    <br>
+                    <a href="#" class="example-link" onclick="fillExample(); return false;">Example link format</a>
+                </div>
+            </div>
+
+            <label class="consent-box" for="consent">
+                <input type="checkbox" id="consent" required>
+                <span>
+                    This system is the prototype of a TUBITAK 2209-A research project. Your CV link is used only for the
+                    analysis and is <b>not stored</b>. Visits, analysis duration and the feedback you give are recorded
+                    <b>anonymously</b> and used in scientific publications only as aggregate statistics.
+                    <details>
+                        <summary>Details</summary>
+                        Recorded: a random browser ID (cookie), whether the analysis succeeded and its duration,
+                        the 👍/👎 votes you give to the recommended projects and the short survey answers. Your name, e-mail, IP address
+                        and CV content are not recorded. Participation is voluntary; you can close the page at any time.
+                    </details>
+                </span>
+            </label>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Analyze
+            </button>
+        </form>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div class="progress-message" id="progressMessage">Preparing...</div>
+            <div class="progress-time" id="progressTime">Elapsed time: 0 seconds</div>
+        </div>
+
+        <div id="survey"></div>
+
+        <div class="counter" id="counter"></div>
+        <div class="footer-info">FAIR-PASS · Europass-based fair volunteer matching · TUBITAK 2209-A</div>
+    </div>
+
+    <script src="/static/survey.js"></script>
+
+    <script>
+        const form = document.getElementById('cvForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressMessage = document.getElementById('progressMessage');
+        const progressTime = document.getElementById('progressTime');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        let sessionId = null;
+        let statusInterval = null;
+        let timeInterval = null;
+        let startTime = null;
+        const MAX_WAIT_TIME = 60 * 60 * 1000; // 60 minutes (milliseconds) - increased for model loading and large data sets
+
+        fetch('/api/counter').then(r => r.json()).then(d => {
+            if (d && d.analysis_count > 0) {
+                // Note: like counts are deliberately not shown here (so as not to influence the survey answers)
+                document.getElementById('counter').textContent = `${d.analysis_count} analyses so far`;
+            }
+        }).catch(() => {});
+
+        function fillExample() {
+            document.getElementById('cvUrl').value = 'https://europa.eu/europass/eportfolio/api/eprofile/shared-profile/example/12345678-1234-1234-1234-123456789012?view=html';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            successMessage.classList.remove('active');
+            setTimeout(() => {
+                errorMessage.classList.remove('active');
+            }, 10000); // Show for 10 seconds
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('active');
+            errorMessage.classList.remove('active');
+        }
+
+        function updateProgress(progress, message) {
+            progressFill.style.width = progress + '%';
+            progressFill.textContent = progress + '%';
+            progressMessage.textContent = message;
+            updateElapsedTime();
+        }
+
+        function updateElapsedTime() {
+            if (!startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000); // in seconds
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            let timeText = '';
+            if (minutes > 0) {
+                timeText = `Elapsed time: ${minutes} minutes ${seconds} seconds`;
+            } else {
+                timeText = `Elapsed time: ${seconds} seconds`;
+            }
+            
+            progressTime.textContent = timeText;
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function showNotification(title, message) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: message,
+                    icon: '/static/favicon.ico', // You can add an icon if you like
+                    badge: '/static/favicon.ico',
+                    tag: 'cv-analysis',
+                    requireInteraction: false
+                });
+            }
+        }
+
+        function checkStatus() {
+            if (!sessionId) return;
+
+            // Timeout check
+            if (startTime && (Date.now() - startTime) > MAX_WAIT_TIME) {
+                if (statusInterval) {
+                    clearInterval(statusInterval);
+                    statusInterval = null;
+                }
+                if (timeInterval) {
+                    clearInterval(timeInterval);
+                    timeInterval = null;
+                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Analyze';
+                showError('The analysis took too long (60 minutes). Please refresh the page and try again, or contact the system administrator.');
+                progressContainer.classList.remove('active');
+                return;
+            }
+
+            fetch(`/status/${sessionId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateProgress(data.progress, data.message);
+
+                    if (data.status === 'completed') {
+                        // Clear the intervals and set them to null (so they do not restart)
+                        if (statusInterval) {
+                            clearInterval(statusInterval);
+                            statusInterval = null;
+                        }
+                        if (timeInterval) {
+                            clearInterval(timeInterval);
+                            timeInterval = null;
+                        }
+                        
+                        // Show the final time
+                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        const timeText = minutes > 0 
+                            ? `${minutes} minutes ${seconds} seconds`
+                            : `${seconds} seconds`;
+                        
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Analyze';
+                        showSuccess(`Analysis completed! (${timeText}) Loading the results...`);
+                        
+                        // Send a notification
+                        showNotification(
+                            'CV analysis completed! 🎉',
+                            `The analysis completed in ${timeText}. Click to see the results.`
+                        );
+                        
+                        setTimeout(() => {
+                            window.location.href = `/results/${sessionId}`;
+                        }, 1500);
+                    } else if (data.status === 'error') {
+                        // Clear the intervals and set them to null (so they do not restart)
+                        if (statusInterval) {
+                            clearInterval(statusInterval);
+                            statusInterval = null;
+                        }
+                        if (timeInterval) {
+                            clearInterval(timeInterval);
+                            timeInterval = null;
+                        }
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Analyze';
+                        showError(data.message || 'An error occurred. Please try again.');
+                        progressContainer.classList.remove('active');
+                        // Also show the short survey on error (problem report)
+                        showSurvey(document.getElementById('survey'), sessionId, 'error');
+                        
+                        // Error notification
+                        showNotification(
+                            'CV analysis error ❌',
+                            data.message || 'An error occurred. Please try again.'
+                        );
+                    }
+                    // If the status is still 'processing' or 'queued', continue
+                })
+                .catch(error => {
+                    console.error('Status check error:', error);
+                    // Also continue on error, it may be a temporary problem
+                    // But stop if there are too many errors
+                });
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cvUrl = document.getElementById('cvUrl').value.trim();
+            
+            if (!cvUrl) {
+                showError('Please enter a CV link');
+                return;
+            }
+            if (!document.getElementById('consent').checked) {
+                showError('Please accept the information notice to continue.');
+                return;
+            }
+            document.getElementById('survey').innerHTML = '';
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span>Sending...';
+            errorMessage.classList.remove('active');
+            successMessage.classList.remove('active');
+            progressContainer.classList.add('active');
+            updateProgress(0, 'Sending the request...');
+
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ cv_url: cvUrl, consent: document.getElementById('consent').checked })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    sessionId = data.session_id;
+                    startTime = Date.now(); // Record the start time
+                    showSuccess('CV analysis started! Running in the background...');
+                    
+                    // Ask for notification permission
+                    requestNotificationPermission();
+                    
+                    // Start the status check (every 3 seconds - faster updates)
+                    statusInterval = setInterval(checkStatus, 3000);
+                    checkStatus(); // Run the first check immediately
+                    
+                    // Start the timer (update every second)
+                    timeInterval = setInterval(updateElapsedTime, 1000);
+                    updateElapsedTime(); // Run the first update immediately
+                    
+                    // Start notification
+                    showNotification(
+                        'CV analysis started 🚀',
+                        'The analysis is running in the background. You will be notified when it completes.'
+                    );
+                } else {
+                    throw new Error(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Analyze';
+                progressContainer.classList.remove('active');
+                showError(error.message || 'An error occurred. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

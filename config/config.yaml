@@ -29,7 +29,6 @@ data_sources:
 models:
   skill_extraction:
     spacy_model: "en_core_web_lg"  # Faster model (3-4x faster than lg, slightly less accurate)
-    skill_db_file: "data/external/skill_db_relax_20.json"
     max_text_length: 5000  # Truncate very long texts (for performance - lowered from 8000 to 5000 for speed) - 0 = unlimited
     max_ngram_results: 20  # Take the best N n-grams (for performance - lowered from 40 to 20 for speed) - 0 = unlimited
   

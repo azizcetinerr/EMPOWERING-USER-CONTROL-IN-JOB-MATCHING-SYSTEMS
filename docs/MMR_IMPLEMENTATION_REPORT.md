@@ -349,7 +349,7 @@ Baseline   0.0028       52.98        -
 
 **Observation**: no lambda value increased the Diversity Score. This shows that after MMR the vectors could not be processed in the diversity computation code.
 
-#### 5.1.3. `debug_diversity.py`
+#### 5.1.3. `debug_diversity.py` (one-off script, no longer in the repository)
 **Purpose**: to analyze in detail why the Diversity Score is 0.0
 
 **What it does**:
@@ -411,7 +411,7 @@ Relevance Accuracy: 52.98
 ✅ **Test infrastructure created**:
 - `test_mmr.py`: basic MMR test
 - `test_mmr_lambda.py`: lambda parameter optimization
-- `debug_diversity.py`: detailed diversity analysis
+- `debug_diversity.py`: detailed diversity analysis (one-off script, no longer in the repository)
 
 ### 6.2. Remaining problems
 
@@ -679,7 +679,6 @@ EMPOWERING-USER-CONTROL-IN-JOB-MATCHING-SYSTEMS/
 │   └── config.yaml                   # MMR settings
 ├── tests/test_mmr.py                 # Basic MMR test
 ├── tests/test_mmr_lambda.py          # Lambda optimization
-├── scripts/debug_diversity.py        # Diversity analysis
 └── IP1_output_listings_vectorized.pkl # Vector file
 ```
 

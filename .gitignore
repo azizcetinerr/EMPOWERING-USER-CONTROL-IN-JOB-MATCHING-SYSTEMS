@@ -38,8 +38,6 @@ tubitak-env/
 
 # Data Directories
 data/
-!data/external/skill_db_relax_20.json
-!data/external/token_dist.json
 
 # Generated Files
 outputs/*
@@ -70,3 +68,6 @@ models/
 # Paper (fairpass_v2) reproducibility files
 !outputs/results/IP5_S_recomputed.csv
 !outputs/results/IP5_final_fair_ranking.csv
+
+# Analysis outputs of the public web release (contain collected user data)
+web_public/analysis/output/
