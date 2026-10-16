@@ -860,6 +860,12 @@ class ProjectPipeline:
         df_projects.to_pickle(projects_vectors_path)
         self.logger.info(f"Project vectors saved: {projects_vectors_path} ({len(df_projects)} projects in total)")
         
+        # Remove duplicated records of the same listing
+        n_before = len(df_projects)
+        df_projects = df_projects.drop_duplicates(subset='link').reset_index(drop=True)
+        if len(df_projects) < n_before:
+            self.logger.info(f"🧹 {n_before - len(df_projects)} duplicated listing records removed")
+
         # Filter out projects whose application deadline has passed
         from datetime import datetime
         if 'application_deadline' in df_projects.columns:

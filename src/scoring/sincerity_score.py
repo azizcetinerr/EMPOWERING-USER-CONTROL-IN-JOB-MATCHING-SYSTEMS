@@ -23,14 +23,16 @@ class SincerityScoreCalculator:
         self.config = config
         self.logger = logger or logging.getLogger(__name__)
         
-        # AI detection model
+        # AI detection model (disabled by default: the GPT-2 output detector returns a single
+        # constant for the letter, so it cannot change the order of the listings)
         ai_config = config.get('models', {}).get('ai_detection', {})
-        ai_model_name = ai_config.get('model_name', 'roberta-base-openai-detector')
-        
-        self.logger.info(f"Loading AI detection model: {ai_model_name}...")
-        self.ai_tokenizer = AutoTokenizer.from_pretrained(ai_model_name)
-        self.ai_model = AutoModelForSequenceClassification.from_pretrained(ai_model_name)
-        self.ai_model.eval()
+        self.ai_enabled = ai_config.get('enabled', False)
+        if self.ai_enabled:
+            ai_model_name = ai_config.get('model_name', 'roberta-base-openai-detector')
+            self.logger.info(f"Loading AI detection model: {ai_model_name}...")
+            self.ai_tokenizer = AutoTokenizer.from_pretrained(ai_model_name)
+            self.ai_model = AutoModelForSequenceClassification.from_pretrained(ai_model_name)
+            self.ai_model.eval()
         
         # Embedding model
         embed_config = config.get('models', {}).get('embedding', {})
@@ -57,6 +59,10 @@ class SincerityScoreCalculator:
         self.human_weight = sincerity_config.get('human_score_weight', 0.4)
         self.context_weight = sincerity_config.get('context_score_weight', 0.6)
         self.top_n = sincerity_config.get('top_n_projects', 20)
+        if not self.ai_enabled:
+            self.human_weight, self.context_weight = 0.0, 1.0
+        self.query_prefix = embed_config.get('query_prefix', '')
+        self.passage_prefix = embed_config.get('passage_prefix', '')
         
         # Motivation letter
         self.motivation_letter = config.get('data_sources', {}).get('motivation_letter', {}).get('text', '')
@@ -65,9 +71,10 @@ class SincerityScoreCalculator:
         
         # Precompute the letter's vector
         if self.motivation_letter:
-            self.letter_vector = self._get_embedding(self.motivation_letter)
-            self.human_score = self._detect_ai_generated(self.motivation_letter)
-            self.logger.info(f"Motivation letter AI score: {self.human_score:.4f}")
+            self.letter_vector = self._get_embedding(self.query_prefix + self.motivation_letter)
+            self.human_score = self._detect_ai_generated(self.motivation_letter) if self.ai_enabled else 0.0
+            if self.ai_enabled:
+                self.logger.info(f"Motivation letter AI score: {self.human_score:.4f}")
     
     def _detect_ai_generated(self, text: str) -> float:
         """Returns the probability that the text was written by AI"""
@@ -90,8 +97,11 @@ class SincerityScoreCalculator:
         
         with torch.no_grad():
             outputs = self.embed_model(**inputs)
-        
-        return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+
+        # Mean pooling over real tokens only
+        mask = inputs["attention_mask"].unsqueeze(-1).to(outputs.last_hidden_state.dtype)
+        summed = (outputs.last_hidden_state * mask).sum(dim=1)
+        return (summed / mask.sum(dim=1).clamp(min=1e-9)).cpu().numpy()
     
     def calculate_sincerity_score(self, project_text: str) -> tuple:
         """
@@ -104,14 +114,14 @@ class SincerityScoreCalculator:
             (S_Score, Human_Score, Context_Score) tuple
         """
         # Get the project vector
-        project_vector = self._get_embedding(str(project_text))
+        project_vector = self._get_embedding(self.passage_prefix + str(project_text))
         
         # Cosine similarity
         similarity = cosine_similarity(self.letter_vector, project_vector)[0][0]
         context_score = similarity * 100
         
-        # Human-written score (complement)
-        human_score = (1 - self.human_score) * 100
+        # Human-written score (complement); 0 when the detector is disabled
+        human_score = (1 - self.human_score) * 100 if self.ai_enabled else 0.0
         
         # Final S score
         final_s = (human_score * self.human_weight) + (context_score * self.context_weight)

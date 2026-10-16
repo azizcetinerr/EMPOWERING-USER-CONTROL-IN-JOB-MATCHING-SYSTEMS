@@ -8,6 +8,7 @@ import logging
 from typing import Dict, Tuple
 from pathlib import Path
 import json
+import re
 from sklearn.metrics.pairwise import cosine_similarity
 
 
@@ -85,9 +86,9 @@ class FinalRankingCalculator:
         bonus = 0.0
         text = str(row.get('full_description', '')).lower()
         
-        # Keyword check
+        # Keyword check on whole words (a substring test matches "art" inside "start", "part", ...)
         for keyword in self.bonus_keywords:
-            if keyword in text:
+            if re.search(rf"\b{re.escape(keyword.lower())}\b", text):
                 bonus = self.bonus_score
                 break
         

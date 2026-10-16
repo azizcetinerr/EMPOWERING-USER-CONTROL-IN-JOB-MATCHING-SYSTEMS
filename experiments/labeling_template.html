@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relevance labeling – annotator __WHO__</title>
+<style>
+  :root { --bg:#f7f7f5; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#e2e1dc; --acc:#2f5d8a; --g0:#b4433a; --g1:#b98a1c; --g2:#2e7d4f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  header { position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--line); padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; z-index:2; }
+  header h1 { font-size:15px; margin:0; font-weight:600; }
+  .bar { flex:1; min-width:120px; height:6px; background:var(--line); border-radius:3px; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--acc); width:0; }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  button.primary { background:var(--acc); color:#fff; border-color:var(--acc); }
+  main { max-width:860px; margin:0 auto; padding:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:12px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
+  .text { white-space:pre-wrap; max-height:55vh; overflow:auto; }
+  .grades { display:flex; gap:8px; margin:12px 0; flex-wrap:wrap; }
+  .grades button { flex:1; min-width:150px; text-align:left; }
+  .grades button.on[data-g="0"] { background:var(--g0); color:#fff; border-color:var(--g0); }
+  .grades button.on[data-g="1"] { background:var(--g1); color:#fff; border-color:var(--g1); }
+  .grades button.on[data-g="2"] { background:var(--g2); color:#fff; border-color:var(--g2); }
+  textarea { width:100%; font:inherit; border:1px solid var(--line); border-radius:6px; padding:6px; }
+  nav { display:flex; justify-content:space-between; gap:8px; }
+  details pre { white-space:pre-wrap; font:13px/1.45 inherit; }
+  .grid { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .grid span { width:26px; height:22px; font-size:11px; display:flex; align-items:center; justify-content:center; border-radius:4px; background:var(--line); cursor:pointer; }
+  .grid span.d0 { background:var(--g0); color:#fff; } .grid span.d1 { background:var(--g1); color:#fff; } .grid span.d2 { background:var(--g2); color:#fff; }
+  .grid span.cur { outline:2px solid var(--acc); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Annotator __WHO__</h1>
+  <span id="count"></span>
+  <div class="bar"><i id="prog"></i></div>
+  <button class="primary" id="dl">Download labels_<span>__WHO__</span>.csv</button>
+</header>
+<main>
+  <details class="card"><summary><b>Candidate profile</b> (letter and CV)</summary>
+    <h3>Motivation letter</h3><pre id="letter"></pre><h3>CV</h3><pre id="cv"></pre></details>
+  <div class="card">
+    <div class="meta" id="meta"></div>
+    <div class="text" id="text"></div>
+    <div class="grades">
+      <button data-g="0"><b>0</b> – not suitable</button>
+      <button data-g="1"><b>1</b> – partly suitable</button>
+      <button data-g="2"><b>2</b> – suitable</button>
+    </div>
+    <textarea id="note" rows="2" placeholder="Note (optional)"></textarea>
+  </div>
+  <nav><button id="prev">← Previous</button><button id="next">Next →</button></nav>
+  <div class="card" style="margin-top:12px"><div class="meta">All items (click to jump). Keys: 0 / 1 / 2 grade, ← → move.</div><div class="grid" id="grid"></div></div>
+</main>
+<script>
+const ITEMS = __ITEMS__;
+const PROFILE = __PROFILE__;
+const KEY = "labels___WHO___" + ITEMS.length;
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+let cur = 0;
+const $ = id => document.getElementById(id);
+$("letter").textContent = PROFILE.letter; $("cv").textContent = PROFILE.cv;
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+function render() {
+  const it = ITEMS[cur], s = state[it.id] || {};
+  $("meta").innerHTML = `Item ${it.item} of ${ITEMS.length} · listing ${it.id} · <a href="${it.link}" target="_blank" rel="noopener">open on the portal</a>`;
+  $("text").textContent = it.text; $("text").scrollTop = 0;
+  document.querySelectorAll(".grades button").forEach(b => b.classList.toggle("on", s.grade !== undefined && String(s.grade) === b.dataset.g));
+  $("note").value = s.note || "";
+  const done = ITEMS.filter(x => state[x.id] && state[x.id].grade !== undefined).length;
+  $("count").textContent = `${done}/${ITEMS.length} labeled`;
+  $("prog").style.width = (100 * done / ITEMS.length) + "%";
+  $("grid").innerHTML = ITEMS.map((x, i) => { const g = state[x.id] && state[x.id].grade; return `<span class="${g !== undefined ? "d" + g : ""} ${i === cur ? "cur" : ""}" data-i="${i}">${x.item}</span>`; }).join("");
+}
+function setGrade(g) { const id = ITEMS[cur].id; state[id] = Object.assign(state[id] || {}, { grade: g }); save(); render(); }
+document.querySelectorAll(".grades button").forEach(b => b.onclick = () => setGrade(Number(b.dataset.g)));
+$("note").oninput = e => { const id = ITEMS[cur].id; state[id] = Object.assign(state[id] || {}, { note: e.target.value }); save(); };
+$("prev").onclick = () => { cur = Math.max(0, cur - 1); render(); };
+$("next").onclick = () => { cur = Math.min(ITEMS.length - 1, cur + 1); render(); };
+$("grid").onclick = e => { if (e.target.dataset.i) { cur = Number(e.target.dataset.i); render(); } };
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA") return;
+  if (["0", "1", "2"].includes(e.key)) setGrade(Number(e.key));
+  if (e.key === "ArrowRight") $("next").click();
+  if (e.key === "ArrowLeft") $("prev").click();
+});
+$("dl").onclick = () => {
+  const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = ["item,listing_id,link,grade,note"].concat(ITEMS.map(x => { const s = state[x.id] || {}; return [x.item, x.id, x.link, s.grade ?? "", s.note ?? ""].map(esc).join(","); }));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
+  a.download = "labels___WHO__.csv"; a.click();
+};
+render();
+</script>
+</body>
+</html>

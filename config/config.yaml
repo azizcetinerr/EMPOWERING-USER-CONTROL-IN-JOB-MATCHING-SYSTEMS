@@ -38,6 +38,7 @@ models:
     batch_size: 128  # Optimized for MPS/GPU (64 -> 128, for speed)
   
   ai_detection:
+    enabled: false  # The detector returns one constant per letter and cannot change the order
     model_name: "roberta-base-openai-detector"
   
   nli:
@@ -84,8 +85,10 @@ sincerity_scoring:
   calculate_all: false  # If False, computed only for the top N (fast and good quality) - True is slow but covers all projects
 
 # Fairness Settings
+# Disabled: the keyword bonus is not a fairness intervention and, as a substring test,
+# it applied to almost every listing. If enabled, keywords are now matched as whole words.
 fairness:
-  enabled: true
+  enabled: false
   bonus_keywords: ["culture", "art", "heritage", "diversity"]
   bonus_score: 5.0
 
@@ -101,20 +104,22 @@ performance_metrics:
 
 # Reliability Score (R-Score) Advanced Settings
 reliability_scoring:
+  max_evidence_paragraphs: null  # null = use every CV paragraph
   # Bonus for the organization's number of past projects
+  # Host adjustments are disabled: the host fields are empty for every scraped listing
   project_count_bonus:
-    enabled: true
+    enabled: false
     thresholds: [1, 5, 10, 20, 50]  # Project count thresholds
     bonuses: [2.0, 5.0, 10.0, 15.0, 20.0]  # Bonus points for each threshold
   
   # Verification status bonus
   verified_bonus:
-    enabled: true
+    enabled: false
     bonus_score: 15.0  # Bonus for verified organizations
   
   # Missing data penalties
   missing_data_penalties:
-    enabled: true
+    enabled: false
     address: 10.0  # Penalty if the address is missing
     website: 10.0  # Penalty if the website is missing
     organization_name: 5.0  # Penalty if the organization name is missing

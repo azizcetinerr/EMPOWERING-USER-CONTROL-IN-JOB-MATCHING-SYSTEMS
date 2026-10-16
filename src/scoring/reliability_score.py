@@ -42,7 +42,10 @@ class ReliabilityScoreCalculator:
         self.model = AutoModelForSequenceClassification.from_pretrained(nli_model_name)
         self.model.to(self.device)
         self.model.eval()
-        self.logger.info(f"Model loaded on device {self.device}")
+        label2id = {k.lower(): v for k, v in self.model.config.label2id.items()}
+        self.entailment_idx = label2id.get('entailment', 1)
+        self._claim_cache = {}
+        self.logger.info(f"Model loaded on device {self.device} (entailment index {self.entailment_idx})")
     
     def verify_claim(self, claim: str, evidence_list: List[str]) -> float:
         """
@@ -61,16 +64,14 @@ class ReliabilityScoreCalculator:
         
         # Turn the claim into a hypothesis
         hypothesis = f"I have the skill of {claim}."
-        
-        # If there is too much evidence, select the most important items (for performance)
-        # Use the first 10 paragraphs (usually sufficient)
-        max_evidence = 10
-        limited_evidence = evidence_list[:max_evidence] if len(evidence_list) > max_evidence else evidence_list
-        
-        # Build pairs with the evidence
+
+        # All CV paragraphs are used as evidence (optionally capped through the config)
+        max_evidence = self.config.get('reliability_scoring', {}).get('max_evidence_paragraphs')
+        limited_evidence = evidence_list[:max_evidence] if max_evidence else evidence_list
+
+        # Build (premise, hypothesis) pairs
         pairs = [(evidence, hypothesis) for evidence in limited_evidence]
-        
-        # Feed the model (batch processing is already applied)
+
         inputs = self.tokenizer(
             pairs,
             padding=True,
@@ -78,19 +79,17 @@ class ReliabilityScoreCalculator:
             return_tensors="pt",
             max_length=512
         ).to(self.device)
-        
+
         with torch.no_grad():
             logits = self.model(**inputs).logits
-        
-        # Take the entailment score (index 1)
-        entailment_scores = logits[:, 1].cpu().numpy()
-        
-        # Find the highest verification score
-        max_score = entailment_scores.max()
-        
-        # Map to a 0-100 score with a sigmoid-like transform
-        probability = 1 / (1 + np.exp(-max_score))
-        
+
+        # Entailment probability from a softmax over the three NLI classes
+        # (a logistic function of the entailment logit alone ignores the other two classes)
+        probs = torch.softmax(logits, dim=-1)[:, self.entailment_idx].cpu().numpy()
+
+        # Highest entailment probability over the evidence paragraphs
+        probability = float(probs.max())
+
         return probability * 100
     
     def calculate_reliability_score(
@@ -291,8 +290,10 @@ class ReliabilityScoreCalculator:
                     # Batch processing: verify all skills at once
                     total_score = 0.0
                     for skill in valid_skills:
-                        score = self.verify_claim(skill, cv_paragraphs)
-                        total_score += score
+                        # Skills repeat across listings, so each one is verified only once
+                        if skill not in self._claim_cache:
+                            self._claim_cache[skill] = self.verify_claim(skill, cv_paragraphs)
+                        total_score += self._claim_cache[skill]
                 
                 # Mean score
                     base_r_score = total_score / len(valid_skills)

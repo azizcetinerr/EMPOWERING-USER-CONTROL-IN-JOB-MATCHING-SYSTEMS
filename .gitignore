@@ -71,3 +71,7 @@ models/
 
 # Analysis outputs of the public web release (contain collected user data)
 web_public/analysis/output/
+
+# Corrected-system experiments: labeled skill pairs are tracked; outputs (they contain the CV) are not
+!experiments/skill_pairs.csv
+experiments/out/

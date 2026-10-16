@@ -25,6 +25,8 @@ class SkillVectorizer:
         model_config = config.get('models', {}).get('embedding', {})
         self.model_name = model_config.get('model_name', 'xlm-roberta-base')
         self.batch_size = model_config.get('batch_size', 32)
+        # Prefix required by some encoders (e.g. "query: " for multilingual-e5); empty for others
+        self.text_prefix = model_config.get('text_prefix', '')
         
         # Device selection
         device_str = model_config.get('device', 'auto')
@@ -72,7 +74,7 @@ class SkillVectorizer:
             Vector matrix (numpy array)
         """
         if not skills or len(skills) == 0:
-            return np.zeros((1, 768))  # XLM-R-base dimension
+            return np.zeros((1, self.model.config.hidden_size))
         
         # If it is a nested list (one skill list per project)
         if isinstance(skills[0], list):
@@ -80,6 +82,7 @@ class SkillVectorizer:
             skill_texts = [' '.join(skill_list) if skill_list else '' for skill_list in skills]
         else:
             skill_texts = skills
+        skill_texts = [self.text_prefix + t for t in skill_texts]
         
         # Batch processing
         all_embeddings = []
@@ -97,8 +100,10 @@ class SkillVectorizer:
                 ).to(self.device)
                 
                 outputs = self.model(**inputs)
-                # Mean pooling
-                embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+                # Mean pooling over real tokens only (padding positions are masked out)
+                mask = inputs["attention_mask"].unsqueeze(-1).to(outputs.last_hidden_state.dtype)
+                summed = (outputs.last_hidden_state * mask).sum(dim=1)
+                embeddings = (summed / mask.sum(dim=1).clamp(min=1e-9)).cpu().numpy()
                 all_embeddings.append(embeddings)
         
         result = np.vstack(all_embeddings)
@@ -122,7 +127,7 @@ class SkillVectorizer:
         
         for skill_list in skill_lists:
             if not skill_list or len(skill_list) == 0:
-                vectors.append(np.zeros((1, 768)))
+                vectors.append(np.zeros((1, self.model.config.hidden_size)))
             else:
                 vec = self.vectorize_skills(skill_list)
                 vectors.append(vec)

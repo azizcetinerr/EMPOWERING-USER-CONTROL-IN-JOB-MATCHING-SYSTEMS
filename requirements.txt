@@ -18,6 +18,8 @@ spacy>=3.7.0
 transformers>=4.35.0
 torch>=2.1.0
 skillNer>=1.0.3
+sentence-transformers>=2.7.0
+rank_bm25>=0.2.2
 
 # Configuration and Utilities
 pyyaml>=6.0.1
