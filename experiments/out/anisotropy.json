@@ -1,0 +1,155 @@
+{
+  "description": "Outlier dimension in the reported run's skill vectors (xlm-roberta-base, mean pooling without padding mask).",
+  "outlier_dimension": 741,
+  "outlier_rule": "most frequent index of the largest absolute coordinate over the complete stored vectors",
+  "stored_source": "data/raw/youth_portal_projeler_detayli.csv",
+  "stored_parse": {
+    "rows": 1242,
+    "rows_abbreviated_by_numpy": 1126,
+    "rows_complete": 116,
+    "zero_vectors_skipped": 62,
+    "rows_with_unexpected_shape": 0,
+    "complete_nonzero_vectors": 54
+  },
+  "stored": {
+    "n_vectors": 54,
+    "largest_abs_dimension_counts": {
+      "741": 54
+    },
+    "share_with_largest_abs_at_d": 1.0,
+    "dimensions_with_largest_mean_abs": {
+      "741": 18.296122170370378,
+      "588": 2.0347251822962966,
+      "459": 0.35943289159922226,
+      "152": 0.30727074858722225,
+      "533": 0.2805072617777778
+    },
+    "value_at_d": {
+      "median": 18.3196974,
+      "p05": 18.173807710000002,
+      "p95": 18.40349247
+    },
+    "median_abs_other_dimensions": {
+      "median": 0.037572192049999995,
+      "p05": 0.032463376215,
+      "p95": 0.041094358039999994
+    },
+    "max_abs_other_dimensions": {
+      "median": 2.1852983249999998,
+      "p05": 0.7229272125,
+      "p95": 2.6633620959999997
+    },
+    "share_of_squared_norm_at_d": {
+      "median": 0.9761057861918682,
+      "p05": 0.9651401695485804,
+      "p95": 0.9893789338231705
+    },
+    "norm": {
+      "median": 18.50870950341784,
+      "p05": 18.466759361295754,
+      "p95": 18.56837060206744
+    },
+    "random_pairs": {
+      "n": 1954,
+      "cosine_all_dimensions": {
+        "median": 0.9956512330636513,
+        "p05": 0.989481511611556,
+        "p95": 0.9982173074959436
+      },
+      "cosine_without_d": {
+        "median": 0.82994964261995,
+        "p05": 0.6214115629191985,
+        "p95": 0.9084955322618913
+      }
+    }
+  },
+  "reencoded": {
+    "listings": 223,
+    "distinct_skills": 711,
+    "reproduction_of_printed_stored_values": {
+      "listings_compared": 223,
+      "printed_values_compared": 12618,
+      "max_abs_difference": 0.24221745611642836,
+      "median_abs_difference": 8.453617572797001e-08,
+      "listings_with_all_printed_values_within_1e-4": 221,
+      "printed_values_differing_by_more_than_1e-4": 54
+    },
+    "n_vectors": 2004,
+    "largest_abs_dimension_counts": {
+      "741": 2004
+    },
+    "share_with_largest_abs_at_d": 1.0,
+    "dimensions_with_largest_mean_abs": {
+      "741": 18.275912503758352,
+      "588": 2.3431254986310175,
+      "459": 0.3544967692136716,
+      "533": 0.26310729341927225,
+      "152": 0.2626325155893444
+    },
+    "value_at_d": {
+      "median": 18.280607223510742,
+      "p05": 18.142518997192383,
+      "p95": 18.406973552703857
+    },
+    "median_abs_other_dimensions": {
+      "median": 0.03531948663294315,
+      "p05": 0.030008584260940552,
+      "p95": 0.04973453190177679
+    },
+    "max_abs_other_dimensions": {
+      "median": 2.60798716545105,
+      "p05": 0.5679780840873718,
+      "p95": 3.574270248413086
+    },
+    "share_of_squared_norm_at_d": {
+      "median": 0.9716766211115798,
+      "p05": 0.9532788676636099,
+      "p95": 0.9885907633561539
+    },
+    "norm": {
+      "median": 18.54322424356473,
+      "p05": 18.42471726096637,
+      "p95": 18.61739140630448
+    },
+    "random_pairs": {
+      "n": 1999,
+      "cosine_all_dimensions": {
+        "median": 0.9947089967397909,
+        "p05": 0.9833454564068178,
+        "p95": 0.9980638819957957
+      },
+      "cosine_without_d": {
+        "median": 0.8327615647235833,
+        "p05": 0.41705315994655234,
+        "p95": 0.9376614030640318
+      }
+    }
+  },
+  "esco": {
+    "n_pairs": 4000,
+    "all_dimensions": {
+      "auc_related_vs_unrelated": 0.62726825,
+      "ci95": [
+        0.6101327375000001,
+        0.6446316000000001
+      ],
+      "median_cosine_related": 0.9959062537754124,
+      "median_cosine_unrelated": 0.9912249428160432
+    },
+    "without_d": {
+      "auc_related_vs_unrelated": 0.6262055,
+      "ci95": [
+        0.609037125,
+        0.6435617625000001
+      ],
+      "median_cosine_related": 0.8825824265672311,
+      "median_cosine_unrelated": 0.7974006887809593
+    }
+  },
+  "environment": {
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+    "encoder": "xlm-roberta-base [hf_meanpool_nomask, unnormalized]",
+    "seed": 2026
+  }
+}

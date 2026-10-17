@@ -1,293 +1,293 @@
 {
-  "selected": {
-    "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-    "backend": "sentence_transformers"
+ "selected": {
+  "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+  "backend": "sentence_transformers"
+ },
+ "selection_rule": "highest ROC-AUC of related (synonym + broader) vs unrelated (easy + hard) ESCO pairs (ties: larger median gap)",
+ "tau_low": 0.16540074348449707,
+ "tau_high": 0.7833597660064697,
+ "tau_rule": "median cosine of the unrelated / related ESCO pairs under the selected encoder",
+ "n_bootstrap": 1000,
+ "pairs_file": "experiments/esco_pairs.csv",
+ "pairs_meta": {
+  "esco_version": "v1.2.1 (package \"ESCO dataset - v1.2.1 - classification - en - csv.zip\", md5 59fd2791cd60dc96405a5d8c0c35436f; CSV files dated 2025-12-16; latest modifiedDate field 2025-12-15)",
+  "esco_files": [
+   "skills_en.csv",
+   "broaderRelationsSkillPillar_en.csv",
+   "skillsHierarchy_en.csv",
+   "skillSkillRelations_en.csv"
+  ],
+  "seed": 2026,
+  "n_per_type": 1000,
+  "counts": {
+   "synonym": 1000,
+   "broader": 1000,
+   "unrelated_hard": 1000,
+   "unrelated_easy": 1000
   },
-  "selection_rule": "highest ROC-AUC of related (synonym + broader) vs unrelated (easy + hard) ESCO pairs (ties: larger median gap)",
-  "tau_low": 0.16540074348449707,
-  "tau_high": 0.7833597660064697,
-  "tau_rule": "median cosine of the unrelated / related ESCO pairs under the selected encoder",
-  "n_bootstrap": 1000,
-  "pairs_file": "experiments/esco_pairs.csv",
-  "pairs_meta": {
-    "esco_version": "unknown (not stated in the CSV files; latest modifiedDate 2025-12-15)",
-    "esco_files": [
-      "skills_en.csv",
-      "broaderRelationsSkillPillar_en.csv",
-      "skillsHierarchy_en.csv",
-      "skillSkillRelations_en.csv"
-    ],
-    "seed": 2026,
-    "n_per_type": 1000,
-    "counts": {
-      "synonym": 1000,
-      "broader": 1000,
-      "unrelated_hard": 1000,
-      "unrelated_easy": 1000
+  "definitions": "(each ~n pairs, fixed seed):\n  synonym         related   preferredLabel of a skill and one of its altLabels (same concept)\n  broader         related   a skill and its direct broader concept (broaderRelationsSkillPillar)\n  unrelated_easy  unrelated two skills whose top-level (Level 0) groups do not overlap\n  unrelated_hard  unrelated two skills in the same Level 1 group, >= 3 steps apart in the\n                            hierarchy and not linked in skillSkillRelations\nEvery concept URI and every label is used at most once in the whole file (no leakage)."
+ },
+ "n_pairs": {
+  "synonym": 1000,
+  "broader": 1000,
+  "unrelated_hard": 1000,
+  "unrelated_easy": 1000
+ },
+ "encoders": [
+  {
+   "encoder": "xlm-roberta-base [hf_meanpool]",
+   "name": "xlm-roberta-base",
+   "backend": "hf_meanpool",
+   "comparisons": {
+    "related_vs_unrelated": {
+     "auc": 0.7509576250000001,
+     "ci95": [
+      0.7355632562500001,
+      0.76580053125
+     ]
     },
-    "definitions": "(each ~n pairs, fixed seed):\n  synonym         related   preferredLabel of a skill and one of its altLabels (same concept)\n  broader         related   a skill and its direct broader concept (broaderRelationsSkillPillar)\n  unrelated_easy  unrelated two skills whose top-level (Level 0) groups do not overlap\n  unrelated_hard  unrelated two skills in the same Level 1 group, >= 3 steps apart in the\n                            hierarchy and not linked in skillSkillRelations\nEvery concept URI and every label is used at most once in the whole file (no leakage)."
-  },
-  "n_pairs": {
-    "synonym": 1000,
-    "broader": 1000,
-    "unrelated_hard": 1000,
-    "unrelated_easy": 1000
-  },
-  "encoders": [
-    {
-      "encoder": "xlm-roberta-base [hf_meanpool]",
-      "name": "xlm-roberta-base",
-      "backend": "hf_meanpool",
-      "comparisons": {
-        "related_vs_unrelated": {
-          "auc": 0.7509576250000001,
-          "ci95": [
-            0.7355632562500001,
-            0.76580053125
-          ]
-        },
-        "synonym_vs_easy": {
-          "auc": 0.9005745000000001,
-          "ci95": [
-            0.8850113625,
-            0.9153459375
-          ]
-        },
-        "broader_vs_easy": {
-          "auc": 0.6424605,
-          "ci95": [
-            0.618548275,
-            0.6668853874999999
-          ]
-        },
-        "synonym_vs_hard": {
-          "auc": 0.8759634999999999,
-          "ci95": [
-            0.8591120875,
-            0.8933525375000001
-          ]
-        },
-        "broader_vs_hard": {
-          "auc": 0.584832,
-          "ci95": [
-            0.5602192125000001,
-            0.608522325
-          ]
-        }
-      },
-      "median_cosine": {
-        "synonym": 0.9985145330429077,
-        "broader": 0.9960560202598572,
-        "unrelated_hard": 0.9954070448875427,
-        "unrelated_easy": 0.9948693513870239
-      },
-      "related_median": 0.9973382949829102,
-      "unrelated_median": 0.995140552520752,
-      "gap": 0.002197742462158203
+    "synonym_vs_easy": {
+     "auc": 0.9005745000000001,
+     "ci95": [
+      0.8850113625,
+      0.9153459375
+     ]
     },
-    {
-      "encoder": "xlm-roberta-base [hf_meanpool_nomask]",
-      "name": "xlm-roberta-base",
-      "backend": "hf_meanpool_nomask",
-      "comparisons": {
-        "related_vs_unrelated": {
-          "auc": 0.62726675,
-          "ci95": [
-            0.6111062687500001,
-            0.64461031875
-          ]
-        },
-        "synonym_vs_easy": {
-          "auc": 0.7249345,
-          "ci95": [
-            0.7020056,
-            0.746919225
-          ]
-        },
-        "broader_vs_easy": {
-          "auc": 0.54297,
-          "ci95": [
-            0.517566725,
-            0.5668327375
-          ]
-        },
-        "synonym_vs_hard": {
-          "auc": 0.7124634999999999,
-          "ci95": [
-            0.69083425,
-            0.7353361875
-          ]
-        },
-        "broader_vs_hard": {
-          "auc": 0.528699,
-          "ci95": [
-            0.5009216750000001,
-            0.55369995
-          ]
-        }
-      },
-      "median_cosine": {
-        "synonym": 0.997962474822998,
-        "broader": 0.992486834526062,
-        "unrelated_hard": 0.9910542964935303,
-        "unrelated_easy": 0.9914246797561646
-      },
-      "related_median": 0.9959061145782471,
-      "unrelated_median": 0.9912248849868774,
-      "gap": 0.004681229591369629
+    "broader_vs_easy": {
+     "auc": 0.6424605,
+     "ci95": [
+      0.618548275,
+      0.6668853874999999
+     ]
     },
-    {
-      "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
-      "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
-      "backend": "sentence_transformers",
-      "comparisons": {
-        "related_vs_unrelated": {
-          "auc": 0.97625275,
-          "ci95": [
-            0.9723219,
-            0.9801138312500001
-          ]
-        },
-        "synonym_vs_easy": {
-          "auc": 0.997993,
-          "ci95": [
-            0.996781625,
-            0.99889
-          ]
-        },
-        "broader_vs_easy": {
-          "auc": 0.9730889999999999,
-          "ci95": [
-            0.966928775,
-            0.9794218
-          ]
-        },
-        "synonym_vs_hard": {
-          "auc": 0.994771,
-          "ci95": [
-            0.992554475,
-            0.9968391
-          ]
-        },
-        "broader_vs_hard": {
-          "auc": 0.9391579999999999,
-          "ci95": [
-            0.9287910749999999,
-            0.947608375
-          ]
-        }
-      },
-      "median_cosine": {
-        "synonym": 0.925895094871521,
-        "broader": 0.6139469742774963,
-        "unrelated_hard": 0.19585365056991577,
-        "unrelated_easy": 0.1274924874305725
-      },
-      "related_median": 0.7833597660064697,
-      "unrelated_median": 0.16540074348449707,
-      "gap": 0.6179590225219727
+    "synonym_vs_hard": {
+     "auc": 0.8759634999999999,
+     "ci95": [
+      0.8591120875,
+      0.8933525375000001
+     ]
     },
-    {
-      "encoder": "sentence-transformers/LaBSE [sentence_transformers]",
-      "name": "sentence-transformers/LaBSE",
-      "backend": "sentence_transformers",
-      "comparisons": {
-        "related_vs_unrelated": {
-          "auc": 0.9546055000000001,
-          "ci95": [
-            0.9484546562499999,
-            0.96074948125
-          ]
-        },
-        "synonym_vs_easy": {
-          "auc": 0.997325,
-          "ci95": [
-            0.995371975,
-            0.9987741750000001
-          ]
-        },
-        "broader_vs_easy": {
-          "auc": 0.9576050000000002,
-          "ci95": [
-            0.9486395500000001,
-            0.96564535
-          ]
-        },
-        "synonym_vs_hard": {
-          "auc": 0.987908,
-          "ci95": [
-            0.9835952999999998,
-            0.9917834999999999
-          ]
-        },
-        "broader_vs_hard": {
-          "auc": 0.875584,
-          "ci95": [
-            0.858960325,
-            0.8900620499999999
-          ]
-        }
-      },
-      "median_cosine": {
-        "synonym": 0.8945651054382324,
-        "broader": 0.5609884262084961,
-        "unrelated_hard": 0.29204612970352173,
-        "unrelated_easy": 0.1862126737833023
-      },
-      "related_median": 0.7315753698348999,
-      "unrelated_median": 0.23631474375724792,
-      "gap": 0.495260626077652
-    },
-    {
-      "encoder": "intfloat/multilingual-e5-base [sentence_transformers]",
-      "name": "intfloat/multilingual-e5-base",
-      "backend": "sentence_transformers",
-      "comparisons": {
-        "related_vs_unrelated": {
-          "auc": 0.97297125,
-          "ci95": [
-            0.9683718625000001,
-            0.9774358937500001
-          ]
-        },
-        "synonym_vs_easy": {
-          "auc": 0.9972770000000001,
-          "ci95": [
-            0.9947149499999999,
-            0.9992260249999999
-          ]
-        },
-        "broader_vs_easy": {
-          "auc": 0.9744099999999999,
-          "ci95": [
-            0.96725995,
-            0.9810346499999999
-          ]
-        },
-        "synonym_vs_hard": {
-          "auc": 0.9924609999999999,
-          "ci95": [
-            0.9886527750000002,
-            0.9953994
-          ]
-        },
-        "broader_vs_hard": {
-          "auc": 0.9277369999999999,
-          "ci95": [
-            0.9152417250000001,
-            0.937997225
-          ]
-        }
-      },
-      "median_cosine": {
-        "synonym": 0.95701003074646,
-        "broader": 0.867728054523468,
-        "unrelated_hard": 0.7807345390319824,
-        "unrelated_easy": 0.7641414999961853
-      },
-      "related_median": 0.9093284606933594,
-      "unrelated_median": 0.772272527217865,
-      "gap": 0.13705593347549438
+    "broader_vs_hard": {
+     "auc": 0.584832,
+     "ci95": [
+      0.5602192125000001,
+      0.608522325
+     ]
     }
-  ]
+   },
+   "median_cosine": {
+    "synonym": 0.9985145330429077,
+    "broader": 0.9960560202598572,
+    "unrelated_hard": 0.9954070448875427,
+    "unrelated_easy": 0.9948693513870239
+   },
+   "related_median": 0.9973382949829102,
+   "unrelated_median": 0.995140552520752,
+   "gap": 0.002197742462158203
+  },
+  {
+   "encoder": "xlm-roberta-base [hf_meanpool_nomask]",
+   "name": "xlm-roberta-base",
+   "backend": "hf_meanpool_nomask",
+   "comparisons": {
+    "related_vs_unrelated": {
+     "auc": 0.62726675,
+     "ci95": [
+      0.6111062687500001,
+      0.64461031875
+     ]
+    },
+    "synonym_vs_easy": {
+     "auc": 0.7249345,
+     "ci95": [
+      0.7020056,
+      0.746919225
+     ]
+    },
+    "broader_vs_easy": {
+     "auc": 0.54297,
+     "ci95": [
+      0.517566725,
+      0.5668327375
+     ]
+    },
+    "synonym_vs_hard": {
+     "auc": 0.7124634999999999,
+     "ci95": [
+      0.69083425,
+      0.7353361875
+     ]
+    },
+    "broader_vs_hard": {
+     "auc": 0.528699,
+     "ci95": [
+      0.5009216750000001,
+      0.55369995
+     ]
+    }
+   },
+   "median_cosine": {
+    "synonym": 0.997962474822998,
+    "broader": 0.992486834526062,
+    "unrelated_hard": 0.9910542964935303,
+    "unrelated_easy": 0.9914246797561646
+   },
+   "related_median": 0.9959061145782471,
+   "unrelated_median": 0.9912248849868774,
+   "gap": 0.004681229591369629
+  },
+  {
+   "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
+   "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+   "backend": "sentence_transformers",
+   "comparisons": {
+    "related_vs_unrelated": {
+     "auc": 0.97625275,
+     "ci95": [
+      0.9723219,
+      0.9801138312500001
+     ]
+    },
+    "synonym_vs_easy": {
+     "auc": 0.997993,
+     "ci95": [
+      0.996781625,
+      0.99889
+     ]
+    },
+    "broader_vs_easy": {
+     "auc": 0.9730889999999999,
+     "ci95": [
+      0.966928775,
+      0.9794218
+     ]
+    },
+    "synonym_vs_hard": {
+     "auc": 0.994771,
+     "ci95": [
+      0.992554475,
+      0.9968391
+     ]
+    },
+    "broader_vs_hard": {
+     "auc": 0.9391579999999999,
+     "ci95": [
+      0.9287910749999999,
+      0.947608375
+     ]
+    }
+   },
+   "median_cosine": {
+    "synonym": 0.925895094871521,
+    "broader": 0.6139469742774963,
+    "unrelated_hard": 0.19585365056991577,
+    "unrelated_easy": 0.1274924874305725
+   },
+   "related_median": 0.7833597660064697,
+   "unrelated_median": 0.16540074348449707,
+   "gap": 0.6179590225219727
+  },
+  {
+   "encoder": "sentence-transformers/LaBSE [sentence_transformers]",
+   "name": "sentence-transformers/LaBSE",
+   "backend": "sentence_transformers",
+   "comparisons": {
+    "related_vs_unrelated": {
+     "auc": 0.9546055000000001,
+     "ci95": [
+      0.9484546562499999,
+      0.96074948125
+     ]
+    },
+    "synonym_vs_easy": {
+     "auc": 0.997325,
+     "ci95": [
+      0.995371975,
+      0.9987741750000001
+     ]
+    },
+    "broader_vs_easy": {
+     "auc": 0.9576050000000002,
+     "ci95": [
+      0.9486395500000001,
+      0.96564535
+     ]
+    },
+    "synonym_vs_hard": {
+     "auc": 0.987908,
+     "ci95": [
+      0.9835952999999998,
+      0.9917834999999999
+     ]
+    },
+    "broader_vs_hard": {
+     "auc": 0.875584,
+     "ci95": [
+      0.858960325,
+      0.8900620499999999
+     ]
+    }
+   },
+   "median_cosine": {
+    "synonym": 0.8945651054382324,
+    "broader": 0.5609884262084961,
+    "unrelated_hard": 0.29204612970352173,
+    "unrelated_easy": 0.1862126737833023
+   },
+   "related_median": 0.7315753698348999,
+   "unrelated_median": 0.23631474375724792,
+   "gap": 0.495260626077652
+  },
+  {
+   "encoder": "intfloat/multilingual-e5-base [sentence_transformers]",
+   "name": "intfloat/multilingual-e5-base",
+   "backend": "sentence_transformers",
+   "comparisons": {
+    "related_vs_unrelated": {
+     "auc": 0.97297125,
+     "ci95": [
+      0.9683718625000001,
+      0.9774358937500001
+     ]
+    },
+    "synonym_vs_easy": {
+     "auc": 0.9972770000000001,
+     "ci95": [
+      0.9947149499999999,
+      0.9992260249999999
+     ]
+    },
+    "broader_vs_easy": {
+     "auc": 0.9744099999999999,
+     "ci95": [
+      0.96725995,
+      0.9810346499999999
+     ]
+    },
+    "synonym_vs_hard": {
+     "auc": 0.9924609999999999,
+     "ci95": [
+      0.9886527750000002,
+      0.9953994
+     ]
+    },
+    "broader_vs_hard": {
+     "auc": 0.9277369999999999,
+     "ci95": [
+      0.9152417250000001,
+      0.937997225
+     ]
+    }
+   },
+   "median_cosine": {
+    "synonym": 0.95701003074646,
+    "broader": 0.867728054523468,
+    "unrelated_hard": 0.7807345390319824,
+    "unrelated_easy": 0.7641414999961853
+   },
+   "related_median": 0.9093284606933594,
+   "unrelated_median": 0.772272527217865,
+   "gap": 0.13705593347549438
+  }
+ ]
 }

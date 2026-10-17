@@ -3,6 +3,7 @@
 Stages (run from the project root):
   python -m experiments.run sanity     # encoder check on labeled skill pairs, picks the encoder
   python -m experiments.run score      # corrected scores, baselines, all rankings, diagnostics
+  python -m experiments.run diagnostics  # rebuild rankings/diagnostics from stored scores (main = v3)
   python -m experiments.run pool       # blind judging pool + labeling pages for two annotators
   python -m experiments.run evaluate   # NDCG@10, P@10, bootstrap CIs, kappa, score validity
   python -m experiments.run all        # sanity + score + pool
@@ -175,6 +176,7 @@ def _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nl
     idf3 = core.idf_weights(lists)
     m, _ = core.matching_scores(lists, sim3, idf3, s3["tau_low"], s3["tau_high"], use_idf)
     e = core.evidence_scores(lists, ev3, idf3, use_idf)
+    df["M_v3_unshrunk"], df["E_v3_unshrunk"] = m, e
     if k3 is not None:
         m, e = (core.shrink_to_median(x, lists, idf3, k3, use_idf) for x in (m, e))
     ch3 = cfg3["encoders"].get("passage_chunks")
@@ -282,8 +284,30 @@ def stage_score(cfg, test=False):
 
     ids = df["listing_id"].to_numpy()
     rk = lambda col: ids[core.order(df[col])].tolist()
-    main_label = "Fused (v2)" if main == "F_rank" else "Fused (v2, z-score)"
-    rankings = {
+    rankings = _base_rankings(rk, k_variants)
+    v3 = _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test)
+    if v3 is not None:
+        rankings.update(_v3_rankings(rk))
+    main_col, main_label = _main_system(main, v3 is not None)
+    for lam in cfg["mmr"]["lambdas"]:
+        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam)].tolist()
+
+    env = {"python": platform.python_version(), "platform": platform.platform(),
+           "encoder": enc.label, "nli": cfg["nli"]["model"], "scoring_seconds": elapsed}
+    cv_info = {"skills": len(cv_skills), "paragraphs": len(cand["paragraphs"])}
+    diag = build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env, cv_info,
+                             sanity, v3, np.array(list(best_sim.values())), k_variants)
+    _dump(diag, out / "diagnostics.json")
+    _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")
+    df.assign(n_skills=df["skills"].str.len())[_score_columns(k_variants, v3 is not None)].to_csv(
+        out / "scores.csv", index=False)
+    log.info(f"Scores, rankings and diagnostics written to {out} ({elapsed:.0f} s)")
+    return diag
+
+
+def _base_rankings(rk, k_variants) -> dict:
+    """Every ranking that is a plain sort of one stored score column (v1, v2 and baselines)."""
+    return {
         "original_A (reported run)": rk("Fair_Score"),
         "original_M (reported run)": rk("M_Score_Raw"),
         "BM25 (profile)": rk("bm25"),
@@ -300,68 +324,199 @@ def stage_score(cfg, test=False):
         "Fused (v2) without E": rk("F_noE"),
         "Fused (v2) without M": rk("F_noM"),
     }
-    v3 = _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test)
-    if v3 is not None:
-        rankings["Fused (v3)"] = rk("F_v3")
-    for lam in cfg["mmr"]["lambdas"]:
-        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main], D, cfg["mmr"]["k"], lam)].tolist()
 
-    # Diagnostics that do not need labels
-    k = cfg["evaluation"]["k"]
-    pos_of = {i: p for p, i in enumerate(ids)}
-    ild = {n: metrics.intra_list_diversity([pos_of[i] for i in r], D, k) for n, r in rankings.items()}
-    length = df["description"].str.len()
-    spread = lambda x: {"mean": float(np.mean(x)), "sd": float(np.std(x, ddof=1)),
-                        "min": float(np.min(x)), "max": float(np.max(x))}
-    sims = np.array(list(best_sim.values()))
-    diag = {
-        "data": data_info,
-        "environment": {"python": platform.python_version(), "platform": platform.platform(),
-                        "encoder": enc.label, "nli": cfg["nli"]["model"], "scoring_seconds": elapsed},
-        "cv": {"skills": len(cv_skills), "paragraphs": len(cand["paragraphs"])},
-        "tau": {"low": sanity["tau_low"], "high": sanity["tau_high"]},
-        "distinct_listing_skills": len(best_sim),
-        "share_listing_skills_at_or_above_tau_high": float((sims >= sanity["tau_high"]).mean()),
-        "share_listing_skills_at_or_below_tau_low": float((sims <= sanity["tau_low"]).mean()),
-        "spread_over_listings_with_skills": {
-            "M": spread(df.loc[has, "M"]), "M_unshrunk": spread(df.loc[has, "M_unshrunk"]),
-            "E_unshrunk": spread(df.loc[has, "E_unshrunk"]), "M_meanmax": spread(df.loc[has, "M_meanmax"]),
-            "original_M_raw": spread(df.loc[has, "M_Score_Raw"]),
-            "L": spread(df["L"]), "original_S_context": spread(df["Context_Score"]),
-            "E": spread(df.loc[has, "E"]), "original_R_raw": spread(df.loc[has, "R_Score_Raw"])},
-        "passage_chunks": {"tokens": ch["tokens"], "overlap": ch["overlap"],
-                           "share_descriptions_with_more_than_one_chunk": float(np.mean([len(c) > 1 for c in chunks])),
-                           "median_chunks": float(np.median([len(c) for c in chunks])),
-                           "max_chunks": int(max(len(c) for c in chunks))},
-        "shrinkage_k": {"main": k_shrink, "variants": list(k_variants.values())},
-        "spearman_with_description_length": {
-            c: float(spearmanr(df[c], length).correlation)
-            for c in ["L", "L_trunc128", "dense_profile", "dense_trunc128", "Context_Score"]},
-        "spearman_between_scores": {
-            f"{a}~{b}": float(spearmanr(df[a], df[b]).correlation)
-            for a, b in [("M", "L"), ("M", "E"), ("L", "E"), ("M", "M_Score_Raw"), ("L", "L_trunc128"),
-                         ("dense_profile", "dense_trunc128"), ("F_rank", "F_v1"),
-                         ("F_rank", "F_zscore"), ("F_rank", "Fair_Score"), ("M", "bm25")]},
-        "top10_overlap_v1_v2": len(set(rankings["Fused (v1, pre-registered)"][:k])
-                                   & set(rankings["Fused (v2)"][:k])),
-        "top10_overlap_with_main": {n: len(set(r[:k]) & set(rankings[main_label][:k]))
-                                    for n, r in rankings.items()},
-        f"ILD@{k}": ild,
-    }
-    if v3 is not None:
-        diag["v3"] = {**v3, "top10_overlap_v2_v3": len(set(rankings["Fused (v2)"][:k]) & set(rankings["Fused (v3)"][:k])),
-                      "spearman_F_v2~F_v3": float(spearmanr(df["F_rank"], df["F_v3"]).correlation),
-                      "spearman_M_v2~M_v3": float(spearmanr(df["M"], df["M_v3"]).correlation)}
-    _dump(diag, out / "diagnostics.json")
-    _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")
+
+def _v3_rankings(rk) -> dict:
+    return {"Fused (v3)": rk("F_v3"), "M only (v3)": rk("M_v3")}
+
+
+def _main_system(main_v2_col, has_v3) -> tuple:
+    """The main system is v3 when config_v3.yaml exists (encoder and tau from the public ESCO pairs),
+    otherwise v2. MMR variants and the diagnostics refer to the main system."""
+    if has_v3:
+        return "F_v3", "Fused (v3)"
+    return main_v2_col, ("Fused (v2)" if main_v2_col == "F_rank" else "Fused (v2, z-score)")
+
+
+def _score_columns(k_variants, has_v3) -> list:
     keep = ["listing_id", "link", "M", "M_unshrunk", "M_meanmax", "M_v1", "L", "L_trunc128", "L_v1",
             "E", "E_unshrunk", "E_v1", "bm25", "tfidf", "dense_profile", "dense_trunc128",
             "F_rank", "F_v1", *[f"F_{n}" for n in k_variants], "F_zscore", "F_noL", "F_noE", "F_noM",
             "M_Score_Raw", "Context_Score", "R_Score_Raw", "Fair_Score"]
+    if has_v3:
+        keep += ["M_v3", "E_v3", "L_v3", "F_v3", "M_v3_unshrunk", "E_v3_unshrunk"]
+    return keep + ["n_skills"]
+
+
+def build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env, cv_info,
+                      sanity, v3, best_sims, k_variants) -> dict:
+    """Label-free diagnostics of the main system (v3 if present), with v1 and v2 as version history."""
+    k = cfg["evaluation"]["k"]
+    is_v3 = main_col == "F_v3"
+    c = ({"M": "M_v3", "M_unshrunk": "M_v3_unshrunk", "E": "E_v3", "E_unshrunk": "E_v3_unshrunk", "L": "L_v3"}
+         if is_v3 else {"M": "M", "M_unshrunk": "M_unshrunk", "E": "E", "E_unshrunk": "E_unshrunk", "L": "L"})
+    tau = ({"low": v3["tau_low"], "high": v3["tau_high"], "source": "sanity_esco.json"} if is_v3 else
+           {"low": sanity["tau_low"], "high": sanity["tau_high"], "source": "sanity.json"})
+    ids = df["listing_id"].to_numpy()
+    pos_of = {i: p for p, i in enumerate(ids)}
+    has = (df["n_skills"] if "n_skills" in df else df["skills"].str.len()) > 0
+    length = df["description"].str.len()
+    spread = lambda x: {"n": int(len(x)), "mean": float(np.mean(x)), "sd": float(np.std(x, ddof=1)),
+                        "min": float(np.min(x)), "max": float(np.max(x))}
+    rho = lambda a, b: float(spearmanr(df[a], df[b]).correlation)
+    top = lambda a, b: len(set(rankings[a][:k]) & set(rankings[b][:k]))
+    diag = {
+        "main_system": main_label,
+        "main_columns": {**c, "F": main_col},
+        "data": data_info,
+        "environment": env,
+        "cv": cv_info,
+        "tau": tau,
+        "distinct_listing_skills": int(len(best_sims)),
+        "share_listing_skills_at_or_above_tau_high": float((best_sims >= tau["high"]).mean()),
+        "share_listing_skills_at_or_below_tau_low": float((best_sims <= tau["low"]).mean()),
+        "spread_over_listings_with_skills": {
+            "M": spread(df.loc[has, c["M"]]), "M_unshrunk": spread(df.loc[has, c["M_unshrunk"]]),
+            "M_meanmax": spread(df.loc[has, "M_meanmax"]),
+            "E": spread(df.loc[has, c["E"]]), "E_unshrunk": spread(df.loc[has, c["E_unshrunk"]]),
+            "L": spread(df[c["L"]]),
+            "original_M_raw": spread(df.loc[has, "M_Score_Raw"]),
+            "original_S_context": spread(df["Context_Score"]),
+            "original_R_raw": spread(df.loc[has, "R_Score_Raw"]),
+            **({"M_v2": spread(df.loc[has, "M"]), "M_v2_unshrunk": spread(df.loc[has, "M_unshrunk"])}
+               if is_v3 else {})},
+        "passage_chunks": {"tokens": cfg["encoders"]["passage_chunks"]["tokens"],
+                           "overlap": cfg["encoders"]["passage_chunks"]["overlap"],
+                           "share_descriptions_with_more_than_one_chunk": float(np.mean([len(x) > 1 for x in chunks])),
+                           "median_chunks": float(np.median([len(x) for x in chunks])),
+                           "max_chunks": int(max(len(x) for x in chunks))},
+        "shrinkage_k": {"main": cfg["skills"]["shrinkage_k"], "variants": list(k_variants.values())},
+        "spearman_with_description_length": {
+            name: float(spearmanr(df[col], length).correlation)
+            for name, col in [("L", c["L"]), ("L_trunc128", "L_trunc128"), ("dense_profile", "dense_profile"),
+                              ("dense_trunc128", "dense_trunc128"), ("Context_Score", "Context_Score")]},
+        "spearman_between_scores": {
+            "M~L": rho(c["M"], c["L"]), "M~E": rho(c["M"], c["E"]), "L~E": rho(c["L"], c["E"]),
+            "M~M_Score_Raw": rho(c["M"], "M_Score_Raw"), "M~bm25": rho(c["M"], "bm25"),
+            "M_unshrunk~M_meanmax": rho(c["M_unshrunk"], "M_meanmax"),
+            "L~L_trunc128": rho(c["L"], "L_trunc128"), "dense_profile~dense_trunc128": rho("dense_profile", "dense_trunc128"),
+            "F_main~Fair_Score": rho(main_col, "Fair_Score"), "F_main~F_v1": rho(main_col, "F_v1"),
+            "F_main~F_v2": rho(main_col, "F_rank"), "F_v2~F_v1": rho("F_rank", "F_v1"),
+            "F_v2~F_v2_zscore": rho("F_rank", "F_zscore")},
+        "top10_overlap_versions": {
+            "v1~v2": top("Fused (v1, pre-registered)", "Fused (v2)"),
+            **({"v2~v3": top("Fused (v2)", "Fused (v3)"), "v1~v3": top("Fused (v1, pre-registered)", "Fused (v3)")}
+               if is_v3 else {})},
+        "top10_overlap_with_main": {n: len(set(r[:k]) & set(rankings[main_label][:k])) for n, r in rankings.items()},
+        f"ILD@{k}": {n: metrics.intra_list_diversity([pos_of[i] for i in r], D, k) for n, r in rankings.items()},
+    }
     if v3 is not None:
-        keep += ["M_v3", "E_v3", "L_v3", "F_v3"]
-    df.assign(n_skills=df["skills"].str.len())[keep + ["n_skills"]].to_csv(out / "scores.csv", index=False)
-    log.info(f"Scores, rankings and diagnostics written to {out} ({elapsed:.0f} s)")
+        diag["v3"] = {**v3, "top10_overlap_v2_v3": top("Fused (v2)", "Fused (v3)"),
+                      "spearman_F_v2~F_v3": rho("F_rank", "F_v3"), "spearman_M_v2~M_v3": rho("M", "M_v3")}
+    diag["v2"] = {"tau_low": sanity["tau_low"], "tau_high": sanity["tau_high"], "tau_source": "sanity.json"}
+    return diag
+
+
+# ----------------------------------------------------------------------------- diagnostics
+def stage_diagnostics(cfg, test=False):
+    """Rebuild rankings.json and diagnostics.json from the stored scores (scores.csv, skill_level_scores.csv)
+    without the CV or the NLI model: only the listing descriptions are re-encoded (for MMR and ILD).
+    Checks that every stored plain ranking (v1, v2, v3, baselines) is reproduced exactly from scores.csv
+    and that the MMR rankings and ILD of the stored run are reproduced with the re-encoded descriptions."""
+    out = _out(cfg)
+    old_diag = json.loads((out / "diagnostics.json").read_text())
+    stored = json.loads((out / "rankings.json").read_text())
+    sanity = json.loads((out / "sanity.json").read_text())
+    df, data_info = core.load_listings(cfg)
+    S = pd.read_csv(out / "scores.csv", dtype={"listing_id": str})
+    if not S["listing_id"].equals(df["listing_id"]):
+        raise ValueError("scores.csv and the listings are not aligned")
+    for col in S.columns.drop(["listing_id", "link"]):
+        df[col] = S[col].to_numpy()
+    k_shrink = cfg["skills"]["shrinkage_k"]
+    k_variants = {f"k={k:g}": k for k in (0, k_shrink / 2, 2 * k_shrink)}
+    checks = {}
+
+    # v3 skill scores from the stored skill-level values (best CV cosine, entailment probability)
+    if not CONFIG_V3.exists():
+        raise FileNotFoundError("config_v3.yaml is required for the diagnostics stage")
+    cfg3 = yaml.safe_load(CONFIG_V3.read_text(encoding="utf-8"))
+    s3 = json.loads((out / cfg3["encoder_selection"]["sanity_file"]).read_text())
+    sl = pd.read_csv(out / "skill_level_scores.csv", keep_default_na=False)
+    best_sim = dict(zip(sl["skill"].astype(str), sl["best_cv_similarity"].astype(float)))
+    evidence = dict(zip(sl["skill"].astype(str), sl["evidence"].astype(float)))
+    df3, _ = core.load_listings({**cfg3, "paths": cfg["paths"]})
+    lists, use_idf = df3["skills"], cfg3["matching"]["idf_weighting"]
+    idf3 = core.idf_weights(lists)
+    m_u, _ = core.matching_scores(lists, best_sim, idf3, s3["tau_low"], s3["tau_high"], use_idf)
+    e_u = core.evidence_scores(lists, evidence, idf3, use_idf)
+    k3 = cfg3["skills"].get("shrinkage_k")
+    m_s, e_s = (core.shrink_to_median(x, lists, idf3, k3, use_idf) for x in (m_u, e_u))
+    checks["max_abs_diff_recomputed_vs_stored"] = {"M_v3": float(np.abs(m_s - df["M_v3"]).max()),
+                                                   "E_v3": float(np.abs(e_s - df["E_v3"]).max())}
+    f3 = core.fuse({"M": df["M_v3"], "L": df["L_v3"], "E": df["E_v3"]}, cfg3["fusion"]["weights"],
+                   cfg3["fusion"]["normalization"])
+    checks["max_abs_diff_recomputed_vs_stored"]["F_v3"] = float(np.abs(f3 - df["F_v3"]).max())
+    df["M_v3_unshrunk"], df["E_v3_unshrunk"] = m_u, e_u
+    v3 = {"encoder": s3["selected"], "same_encoder_as_v2": s3["selected"] == sanity["selected"],
+          "tau_low": s3["tau_low"], "tau_high": s3["tau_high"]}
+
+    # Plain rankings: must equal the stored ones
+    ids = df["listing_id"].to_numpy()
+    rk = lambda col: ids[core.order(df[col])].tolist()
+    rankings = {**_base_rankings(rk, k_variants), **_v3_rankings(rk)}
+    columns = {**_base_rankings(lambda col: col, k_variants), **_v3_rankings(lambda col: col)}
+    exact, tie_swaps = {}, {}
+    for n in [n for n in rankings if n in stored["rankings"]]:
+        new_r, old_r = rankings[n], stored["rankings"][n]
+        exact[n] = new_r == old_r
+        if not exact[n]:   # the CSV round trip may break exact ties differently; allow only tied swaps
+            val = df.set_index("listing_id")[columns[n]]
+            bad = [p for p, (x, y) in enumerate(zip(new_r, old_r)) if x != y and abs(val[x] - val[y]) > 1e-9]
+            if bad or sorted(new_r) != sorted(old_r):
+                raise ValueError(f"{n}: ranking differs from the stored rankings.json at positions {bad[:5]}")
+            tie_swaps[n] = sum(x != y for x, y in zip(new_r, old_r))
+            rankings[n] = old_r   # keep the stored order of tied listings
+    checks["plain_rankings_identical_to_stored"] = exact
+    checks["plain_rankings_differing_only_within_exact_ties"] = tie_swaps
+
+    # Description embeddings (the only model call) -> MMR and ILD
+    t0 = time.perf_counter()
+    enc = make_encoder(sanity["selected"], cfg["encoders"]["batch_size"], cfg["encoders"]["device"])
+    ch = cfg["encoders"]["passage_chunks"]
+    chunks = enc.encode_chunked(df["description"].tolist(), "passage", ch["tokens"], ch["overlap"])
+    D = core.mean_chunk_embedding(chunks)
+    np.save(out / "description_embeddings.npy", D)   # local cache for inspection (ignored by git)
+    old_mmr = {n: r for n, r in stored["rankings"].items() if "+ MMR" in n}
+    checks["stored_mmr_reproduced"] = {}
+    for n, r in old_mmr.items():   # stored MMR variants re-run on their own main score with the new D
+        base_col = "F_v3" if n.startswith("Fused (v3)") else ("F_rank" if n.startswith("Fused (v2) ") else "F_zscore")
+        lam = float(n.rsplit("=", 1)[1])
+        r_new = ids[core.mmr_order(df[base_col], D, cfg["mmr"]["k"], lam)].tolist()
+        k_mmr = cfg["mmr"]["k"]
+        checks["stored_mmr_reproduced"][n] = {
+            "identical": r_new == r, f"first_{k_mmr}_identical": r_new[:k_mmr] == r[:k_mmr],
+            "first_differing_position": next((p for p, (x, y) in enumerate(zip(r_new, r)) if x != y), None)}
+    old_k = f"ILD@{cfg['evaluation']['k']}"
+    pos_of = {i: p for p, i in enumerate(ids)}
+    checks["max_abs_diff_stored_ILD"] = float(max(
+        abs(metrics.intra_list_diversity([pos_of[i] for i in stored["rankings"][n]], D, cfg["evaluation"]["k"]) - v)
+        for n, v in old_diag[old_k].items() if n in stored["rankings"]))
+    main_col, main_label = _main_system("F_rank" if cfg["fusion"]["normalization"] == "rank" else "F_zscore", True)
+    for lam in cfg["mmr"]["lambdas"]:
+        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam)].tolist()
+
+    env = {**old_diag["environment"],
+           "diagnostics_stage": {"python": platform.python_version(), "platform": platform.platform(),
+                                 "encoder": enc.label, "seconds": time.perf_counter() - t0}}
+    diag = build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env,
+                             old_diag["cv"], sanity, v3, np.array(list(best_sim.values())), k_variants)
+    diag["checks"] = checks
+    _dump(diag, out / "diagnostics.json")
+    _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")
+    df[_score_columns(k_variants, True)].to_csv(out / "scores.csv", index=False)
+    log.info(f"Diagnostics rebuilt with {main_label} as the main system -> {out}")
+    log.info(f"Checks: {json.dumps(checks, ensure_ascii=False)[:600]}")
     return diag
 
 
@@ -558,7 +713,7 @@ def _results_md(res, main, k):
 # ----------------------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["sanity", "sanity_esco", "score", "pool", "evaluate", "all"])
+    ap.add_argument("stage", choices=["sanity", "sanity_esco", "score", "diagnostics", "pool", "evaluate", "all"])
     ap.add_argument("--config", default=str(Path(__file__).with_name("config.yaml")))
     ap.add_argument("--test", action="store_true", help="hashing encoder + lexical NLI (no downloads)")
     ap.add_argument("--gold", choices=list(GOLD_NAMES), default="B",

@@ -1,0 +1,292 @@
+{
+  "main_system": "Fused (v3)",
+  "main_columns": {
+    "M": "M_v3",
+    "M_unshrunk": "M_v3_unshrunk",
+    "E": "E_v3",
+    "E_unshrunk": "E_v3_unshrunk",
+    "L": "L_v3",
+    "F": "F_v3"
+  },
+  "data": {
+    "records": 952,
+    "distinct_listings": 939,
+    "duplicated_records_removed": 13,
+    "non_english_listings": 72,
+    "listing_skills_removed_by_language_filter": 256,
+    "listings_without_skills_before_language_filter": 21,
+    "listings_without_skills": 41,
+    "listings_sharing_a_description": 90
+  },
+  "environment": {
+    "python": "3.11.0",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
+    "nli": "cross-encoder/nli-distilroberta-base",
+    "scoring_seconds": 539.9640856249898,
+    "diagnostics_stage": {
+      "python": "3.13.16",
+      "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+      "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
+      "seconds": 616.9142579819998
+    }
+  },
+  "cv": {
+    "skills": 49,
+    "paragraphs": 32
+  },
+  "tau": {
+    "low": 0.16540074348449707,
+    "high": 0.7833597660064697,
+    "source": "sanity_esco.json"
+  },
+  "distinct_listing_skills": 2107,
+  "share_listing_skills_at_or_above_tau_high": 0.045087802562885616,
+  "share_listing_skills_at_or_below_tau_low": 0.0,
+  "spread_over_listings_with_skills": {
+    "M": {
+      "n": 898,
+      "mean": 53.154577611032146,
+      "sd": 5.235705357420028,
+      "min": 37.29538229607837,
+      "max": 69.48543781537046
+    },
+    "M_unshrunk": {
+      "n": 898,
+      "mean": 53.6672937523467,
+      "sd": 9.8158768080325,
+      "min": 19.86932985275712,
+      "max": 100.0
+    },
+    "M_meanmax": {
+      "n": 898,
+      "mean": 52.55101037091058,
+      "sd": 7.486251409492559,
+      "min": 28.818506002426147,
+      "max": 100.00005960464478
+    },
+    "E": {
+      "n": 898,
+      "mean": 70.24727164110855,
+      "sd": 6.136117009747951,
+      "min": 41.482668705806525,
+      "max": 85.2743437088844
+    },
+    "E_unshrunk": {
+      "n": 898,
+      "mean": 70.10989208889829,
+      "sd": 10.114002934783592,
+      "min": 5.03776594996452,
+      "max": 96.97004556655884
+    },
+    "L": {
+      "n": 939,
+      "mean": 47.6882537098897,
+      "sd": 5.683122045111996,
+      "min": 1.467466726899147,
+      "max": 66.49321913719177
+    },
+    "original_M_raw": {
+      "n": 898,
+      "mean": 99.76268909343898,
+      "sd": 0.04434953675321912,
+      "min": 99.38758850097656,
+      "max": 99.87317657470705
+    },
+    "original_S_context": {
+      "n": 939,
+      "mean": 99.7182517168494,
+      "sd": 0.09790434420252699,
+      "min": 98.04984283447266,
+      "max": 99.84720611572266
+    },
+    "original_R_raw": {
+      "n": 898,
+      "mean": 45.53091458276014,
+      "sd": 8.055400223470837,
+      "min": 9.552608489990234,
+      "max": 69.66961669921875
+    },
+    "M_v2": {
+      "n": 898,
+      "mean": 55.51643141239832,
+      "sd": 4.735168028103274,
+      "min": 41.34140408676044,
+      "max": 70.72561928893991
+    },
+    "M_v2_unshrunk": {
+      "n": 898,
+      "mean": 56.00196323557722,
+      "sd": 8.951380981497394,
+      "min": 25.899087040052333,
+      "max": 100.0
+    }
+  },
+  "passage_chunks": {
+    "tokens": 120,
+    "overlap": 20,
+    "share_descriptions_with_more_than_one_chunk": 0.9925452609158679,
+    "median_chunks": 5.0,
+    "max_chunks": 12
+  },
+  "shrinkage_k": {
+    "main": 5,
+    "variants": [
+      0,
+      2.5,
+      10
+    ]
+  },
+  "spearman_with_description_length": {
+    "L": 0.19277175324529386,
+    "L_trunc128": 0.004790442204588179,
+    "dense_profile": 0.2610744403508936,
+    "dense_trunc128": 0.03879817363980628,
+    "Context_Score": -0.5498439785661702
+  },
+  "spearman_between_scores": {
+    "M~L": 0.13631816203435357,
+    "M~E": 0.4763457842407055,
+    "L~E": 0.1695647900851779,
+    "M~M_Score_Raw": 0.04751046706937111,
+    "M~bm25": 0.2457731766729176,
+    "M_unshrunk~M_meanmax": 0.9129812506413116,
+    "L~L_trunc128": 0.45352159600048886,
+    "dense_profile~dense_trunc128": 0.31480761530282925,
+    "F_main~Fair_Score": 0.08887732603313044,
+    "F_main~F_v1": 0.8438341685324623,
+    "F_main~F_v2": 0.9995657291874815,
+    "F_v2~F_v1": 0.8441787033080788,
+    "F_v2~F_v2_zscore": 0.9907896680286595
+  },
+  "top10_overlap_versions": {
+    "v1~v2": 1,
+    "v2~v3": 10,
+    "v1~v3": 1
+  },
+  "top10_overlap_with_main": {
+    "original_A (reported run)": 2,
+    "original_M (reported run)": 0,
+    "BM25 (profile)": 0,
+    "TF-IDF (profile)": 0,
+    "Dense (profile)": 0,
+    "M only": 1,
+    "L only": 1,
+    "E only": 3,
+    "Fused (v2)": 10,
+    "Fused (v1, pre-registered)": 1,
+    "Fused (v2), k=0": 2,
+    "Fused (v2), k=2.5": 7,
+    "Fused (v2), k=10": 9,
+    "Fused (v2, z-score)": 6,
+    "Fused (v2) without L": 3,
+    "Fused (v2) without E": 6,
+    "Fused (v2) without M": 6,
+    "Fused (v3)": 10,
+    "M only (v3)": 1,
+    "Fused (v3) + MMR λ=0.9": 10,
+    "Fused (v3) + MMR λ=0.7": 8,
+    "Fused (v3) + MMR λ=0.5": 5,
+    "Fused (v3) + MMR λ=0.2": 1
+  },
+  "ILD@10": {
+    "original_A (reported run)": 0.38300657272338867,
+    "original_M (reported run)": 0.34557580947875977,
+    "BM25 (profile)": 0.2646462917327881,
+    "TF-IDF (profile)": 0.3062223196029663,
+    "Dense (profile)": 0.27958786487579346,
+    "M only": 0.30356788635253906,
+    "L only": 0.2612471580505371,
+    "E only": 0.3015432357788086,
+    "Fused (v2)": 0.25274181365966797,
+    "Fused (v1, pre-registered)": 0.25772178173065186,
+    "Fused (v2), k=0": 0.2705436944961548,
+    "Fused (v2), k=2.5": 0.2661261558532715,
+    "Fused (v2), k=10": 0.2533784508705139,
+    "Fused (v2, z-score)": 0.26891160011291504,
+    "Fused (v2) without L": 0.30071741342544556,
+    "Fused (v2) without E": 0.2409622073173523,
+    "Fused (v2) without M": 0.22857308387756348,
+    "Fused (v3)": 0.25274181365966797,
+    "M only (v3)": 0.30356788635253906,
+    "Fused (v3) + MMR λ=0.9": 0.2527417540550232,
+    "Fused (v3) + MMR λ=0.7": 0.30907589197158813,
+    "Fused (v3) + MMR λ=0.5": 0.37617337703704834,
+    "Fused (v3) + MMR λ=0.2": 0.6648859977722168
+  },
+  "v3": {
+    "encoder": {
+      "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+      "backend": "sentence_transformers"
+    },
+    "same_encoder_as_v2": true,
+    "tau_low": 0.16540074348449707,
+    "tau_high": 0.7833597660064697,
+    "top10_overlap_v2_v3": 10,
+    "spearman_F_v2~F_v3": 0.9995657291874815,
+    "spearman_M_v2~M_v3": 0.9992852512456094
+  },
+  "v2": {
+    "tau_low": 0.10627847909927368,
+    "tau_high": 0.8086452484130859,
+    "tau_source": "sanity.json"
+  },
+  "checks": {
+    "max_abs_diff_recomputed_vs_stored": {
+      "M_v3": 2.842170943040401e-14,
+      "E_v3": 2.842170943040401e-14,
+      "F_v3": 1.4210854715202004e-14
+    },
+    "plain_rankings_identical_to_stored": {
+      "original_A (reported run)": true,
+      "original_M (reported run)": true,
+      "BM25 (profile)": true,
+      "TF-IDF (profile)": true,
+      "Dense (profile)": true,
+      "M only": true,
+      "L only": true,
+      "E only": true,
+      "Fused (v2)": false,
+      "Fused (v1, pre-registered)": true,
+      "Fused (v2), k=0": false,
+      "Fused (v2), k=2.5": false,
+      "Fused (v2), k=10": false,
+      "Fused (v2, z-score)": true,
+      "Fused (v2) without L": true,
+      "Fused (v2) without E": false,
+      "Fused (v2) without M": false,
+      "Fused (v3)": true
+    },
+    "plain_rankings_differing_only_within_exact_ties": {
+      "Fused (v2)": 2,
+      "Fused (v2), k=0": 4,
+      "Fused (v2), k=2.5": 2,
+      "Fused (v2), k=10": 2,
+      "Fused (v2) without E": 2,
+      "Fused (v2) without M": 4
+    },
+    "stored_mmr_reproduced": {
+      "Fused (v2) + MMR λ=0.9": {
+        "identical": false,
+        "first_20_identical": true,
+        "first_differing_position": 323
+      },
+      "Fused (v2) + MMR λ=0.7": {
+        "identical": false,
+        "first_20_identical": true,
+        "first_differing_position": 323
+      },
+      "Fused (v2) + MMR λ=0.5": {
+        "identical": false,
+        "first_20_identical": true,
+        "first_differing_position": 323
+      },
+      "Fused (v2) + MMR λ=0.2": {
+        "identical": false,
+        "first_20_identical": true,
+        "first_differing_position": 331
+      }
+    },
+    "max_abs_diff_stored_ILD": 1.1920928955078125e-07
+  }
+}

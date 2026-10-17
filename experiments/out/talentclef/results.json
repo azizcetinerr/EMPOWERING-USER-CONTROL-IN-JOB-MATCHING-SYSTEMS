@@ -2,7 +2,7 @@
   "data": {
     "source": "TalentCLEF 2026 Task A, development set, English (Zenodo 10.5281/zenodo.17625261)",
     "license": "CC BY 4.0",
-    "version": "unknown (not stated in the files)",
+    "version": "Task A development set, files dated 2026-02-01 (TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae); Zenodo version not yet confirmed",
     "queries": 10,
     "cvs": 472,
     "relevant_pairs": 472,
@@ -17,7 +17,11 @@
       "44719": 72,
       "46795": 32,
       "47576": 32
-    }
+    },
+    "archive_md5": {
+      "TaskA.zip": "a966109f7e6c2a6c30111fe814fe0bae"
+    },
+    "files_dated": "2026-02-01"
   },
   "scoring": {
     "encoder": {

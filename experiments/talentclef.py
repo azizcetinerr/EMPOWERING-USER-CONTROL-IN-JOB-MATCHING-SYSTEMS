@@ -295,7 +295,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default=str(Path(__file__).with_name("config.yaml")))
     ap.add_argument("--test", action="store_true")
-    ap.add_argument("--dataset-version", default="unknown (not stated in the files)")
+    ap.add_argument("--dataset-version", default="Task A development set, files dated 2026-02-01 (TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae); Zenodo version not yet confirmed")
+    ap.add_argument("--archive-md5", default="a966109f7e6c2a6c30111fe814fe0bae", help="md5 of the downloaded TaskA.zip")
+    ap.add_argument("--files-dated", default="2026-02-01", help="date of the files inside TaskA.zip")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     cfg = yaml.safe_load(Path(a.config).read_text(encoding="utf-8"))
@@ -306,7 +308,8 @@ def main(argv=None):
     res = {"data": {"source": "TalentCLEF 2026 Task A, development set, English (Zenodo 10.5281/zenodo.17625261)",
                     "license": "CC BY 4.0", "version": a.dataset_version, "queries": len(queries),
                     "cvs": len(corpus), "relevant_pairs": int(sum(len(v) for v in qrels.values())),
-                    "relevant_per_query": {q: len(v) for q, v in qrels.items()}},
+                    "relevant_per_query": {q: len(v) for q, v in qrels.items()},
+                    "archive_md5": {"TaskA.zip": a.archive_md5}, "files_dated": a.files_dated},
            "scoring": info, "settings": settings, "runtime_seconds": time.perf_counter() - t0,
            "environment": f"python {platform.python_version()}, {platform.platform()}"}
     out.mkdir(parents=True, exist_ok=True)

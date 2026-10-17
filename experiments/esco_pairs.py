@@ -149,7 +149,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--n", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=2026)
-    ap.add_argument("--esco-version", default="unknown (not stated in the CSV files; latest modifiedDate 2025-12-15)")
+    ap.add_argument("--esco-version", default="v1.2.1 (package \"ESCO dataset - v1.2.1 - classification - en - csv.zip\", md5 59fd2791cd60dc96405a5d8c0c35436f; CSV files dated 2025-12-16; latest modifiedDate field 2025-12-15)")
     ap.add_argument("--out", default=str(ROOT / "experiments" / "esco_pairs.csv"))
     a = ap.parse_args(argv)
     pairs = build_pairs(load_esco(), a.n, a.seed)

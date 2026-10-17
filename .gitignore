@@ -72,6 +72,17 @@ models/
 # Analysis outputs of the public web release (contain collected user data)
 web_public/analysis/output/
 
-# Corrected-system experiments: labeled skill pairs are tracked; outputs (they contain the CV) are not
+# Corrected-system experiments: skill pairs are tracked. Outputs: only files without CV text are tracked
+# (cv_skills_used.txt, skill_level_scores.csv and pool/ contain the CV or evidence derived from it)
 !experiments/skill_pairs.csv
-experiments/out/
+!experiments/esco_pairs.csv
+experiments/out/*
+!experiments/out/diagnostics.json
+!experiments/out/scores.csv
+!experiments/out/sanity_esco.json
+!experiments/out/anisotropy.json
+!experiments/out/talentclef/
+experiments/out/talentclef/*
+!experiments/out/talentclef/results.json
+!experiments/out/talentclef/results.md
+!experiments/out/talentclef/per_query.csv
