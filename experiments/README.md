@@ -58,8 +58,13 @@ python -m experiments.run sanity_esco   # encoder check on the ESCO pairs (v3)
 python -m experiments.run score         # ~10-20 min on Apple silicon (NLI on every listing skill)
 python -m experiments.run diagnostics   # rebuild rankings/diagnostics from stored scores, no CV needed
 python -m experiments.anisotropy        # outlier dimension of the reported run's XLM-R vectors
-python -m experiments.talentclef --dataset-version <version>   # external validation (below)
+python -m experiments.talentclef      # external validation (below); --from-scores re-runs only the evaluation
+python -m experiments.plot_mmr        # Figure 2 of the paper (MMR lambda sweep) from diagnostics.json
+python -m experiments.idf_stats       # distribution of the IDF skill weights (volunteering and TalentCLEF)
 ```
+
+All rankings break ties in the score by ascending listing identifier (on TalentCLEF: document identifier),
+so they do not depend on the row order of the input (`core.order`).
 
 `run.py diagnostics` re-encodes only the listing descriptions (for MMR and ILD) and checks that the
 stored v1, v2 and v3 rankings are reproduced from `scores.csv`; the checks are written to
@@ -75,7 +80,8 @@ reported run did and checks the result against the printed values.
 ## External validation: TalentCLEF 2026 Task A
 
 `experiments/talentclef.py` scores the English development set of TalentCLEF 2026 Task A
-(Zenodo, doi:10.5281/zenodo.17625261, CC BY 4.0; place it under
+(version 0.1.0, Zenodo doi:10.5281/zenodo.18449283, published 2 February 2026, CC BY 4.0;
+TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae; later versions contain a different TaskA.zip; place it under
 `data/external/talentclef/TaskA/development/en/`). The job posting is the query and the CV is the
 document; every query ranks all 472 CVs (main table), and as an additional table its candidate set
 (labeled CVs + BM25 top 100). Systems: BM25, Dense, M_old (the reported run's encoder and formula),
@@ -91,6 +97,7 @@ Tracked in git (no CV text; counts, listing identifiers and scores only):
 - `scores.csv` – every score per listing (new and reported)
 - `sanity_esco.json` – ESCO encoder check, selected encoder, tau
 - `anisotropy.json` – outlier-dimension statistics of the reported run's vectors
+- `idf_stats.json` – distribution of the IDF skill weights on the snapshot and on the TalentCLEF postings
 - `talentclef/results.json`, `results.md`, `per_query.csv` – external validation
 
 Not released (they contain the CV or evidence derived from it): `data/candidate/cv.txt`,

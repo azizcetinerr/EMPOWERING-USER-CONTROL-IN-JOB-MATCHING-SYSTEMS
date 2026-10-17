@@ -56,6 +56,12 @@ def load_task_a(d: Path = DATA):
     return queries, corpus, qrels
 
 
+def load_qrels(d: Path = DATA) -> dict:
+    q = pd.read_csv(d / "qrels.tsv", sep="\t", header=None, names=["qid", "it", "doc", "rel"], dtype=str)
+    q = q[q["rel"].astype(float) > 0]
+    return {qid: set(g["doc"]) for qid, g in q.groupby("qid")}
+
+
 def paragraphs(text, min_chars):
     return [ln.strip() for ln in text.splitlines() if len(ln.strip()) > min_chars]
 
@@ -234,7 +240,8 @@ def score_all(cfg, queries, corpus, test=False):
 
 # ----------------------------------------------------------------------------- evaluation
 def rank_docs(g: pd.DataFrame, system: str) -> list:
-    return g["doc"].to_numpy()[core.order(g[system].to_numpy())].tolist()
+    docs = g["doc"].to_numpy()
+    return docs[core.order(g[system].to_numpy(), docs)].tolist()
 
 
 def evaluate(S, qrels, n_perm=10_000, n_boot=10_000, seed=2026):
@@ -268,6 +275,7 @@ def evaluate(S, qrels, n_perm=10_000, n_boot=10_000, seed=2026):
 
 def results_md(res) -> str:
     lines = ["# TalentCLEF 2026 Task A (English, development set): external validation", "",
+             f"Data: {res['data']['source']}; version {res['data']['version']}.", "",
              f"Queries (job postings): {res['data']['queries']}; CVs: {res['data']['cvs']}; "
              f"relevant pairs: {res['data']['relevant_pairs']} (binary labels). "
              f"Encoder: {res['scoring']['encoder']['name']}; tau {res['scoring']['tau_low']:.3f} / "
@@ -295,17 +303,34 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default=str(Path(__file__).with_name("config.yaml")))
     ap.add_argument("--test", action="store_true")
-    ap.add_argument("--dataset-version", default="Task A development set, files dated 2026-02-01 (TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae); Zenodo version not yet confirmed")
+    ap.add_argument("--dataset-version", default="0.1.0 (published 2026-02-02; TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae matches the Zenodo record; files dated 2026-02-01)")
+    ap.add_argument("--from-scores", action="store_true",
+                    help="re-run only the evaluation on the stored out/talentclef/scores.csv (no models, no data "
+                         "files other than qrels.tsv); data and scoring records are kept from results.json")
     ap.add_argument("--archive-md5", default="a966109f7e6c2a6c30111fe814fe0bae", help="md5 of the downloaded TaskA.zip")
     ap.add_argument("--files-dated", default="2026-02-01", help="date of the files inside TaskA.zip")
     a = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     cfg = yaml.safe_load(Path(a.config).read_text(encoding="utf-8"))
     t0 = time.perf_counter()
+    if a.from_scores:
+        prev = json.loads((OUT / "results.json").read_text(encoding="utf-8"))
+        S = pd.read_csv(OUT / "scores.csv", dtype={"qid": str, "doc": str})
+        P, settings = evaluate(S, load_qrels(), seed=cfg["seed"])
+        prev["settings"] = settings
+        prev["evaluation_rerun"] = {"from": "out/talentclef/scores.csv",
+                                    "tie_break": "descending score, then ascending document id",
+                                    "seconds": time.perf_counter() - t0,
+                                    "environment": f"python {platform.python_version()}, {platform.platform()}"}
+        P.to_csv(OUT / "per_query.csv", index=False)
+        (OUT / "results.json").write_text(json.dumps(prev, indent=2, ensure_ascii=False, default=float), encoding="utf-8")
+        (OUT / "results.md").write_text(results_md(prev), encoding="utf-8")
+        log.info(f"evaluation re-run from stored scores -> {OUT}")
+        return
     queries, corpus, qrels = load_task_a()
     S, info, out = score_all(cfg, queries, corpus, a.test)
     P, settings = evaluate(S, qrels, seed=cfg["seed"])
-    res = {"data": {"source": "TalentCLEF 2026 Task A, development set, English (Zenodo 10.5281/zenodo.17625261)",
+    res = {"data": {"source": "TalentCLEF 2026 Task A, development set, English (Zenodo, version 0.1.0, DOI 10.5281/zenodo.18449283)",
                     "license": "CC BY 4.0", "version": a.dataset_version, "queries": len(queries),
                     "cvs": len(corpus), "relevant_pairs": int(sum(len(v) for v in qrels.values())),
                     "relevant_per_query": {q: len(v) for q, v in qrels.items()},

@@ -1,6 +1,6 @@
 # TalentCLEF 2026 Task A (English, development set): external validation
 
-Data: Zenodo record 10.5281/zenodo.17625261, Task A development set (files dated 2026-02-01); TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae; Zenodo version not yet confirmed.
+Data: TalentCLEF 2026 Task A, development set, English (Zenodo, version 0.1.0, DOI 10.5281/zenodo.18449283); version 0.1.0 (published 2026-02-02; TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae matches the Zenodo record; files dated 2026-02-01).
 
 Queries (job postings): 10; CVs: 472; relevant pairs: 472 (binary labels). Encoder: sentence-transformers/paraphrase-multilingual-mpnet-base-v2; tau 0.165 / 0.783 from sanity_esco.json. Nothing tuned on TalentCLEF.
 

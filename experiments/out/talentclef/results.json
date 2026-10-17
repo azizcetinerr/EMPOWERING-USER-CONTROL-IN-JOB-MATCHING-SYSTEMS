@@ -1,8 +1,8 @@
 {
   "data": {
-    "source": "TalentCLEF 2026 Task A, development set, English (Zenodo 10.5281/zenodo.17625261)",
+    "source": "TalentCLEF 2026 Task A, development set, English (Zenodo, version 0.1.0, DOI 10.5281/zenodo.18449283)",
     "license": "CC BY 4.0",
-    "version": "Task A development set, files dated 2026-02-01 (TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae); Zenodo version not yet confirmed",
+    "version": "0.1.0 (published 2026-02-02; TaskA.zip md5 a966109f7e6c2a6c30111fe814fe0bae matches the Zenodo record; files dated 2026-02-01)",
     "queries": 10,
     "cvs": 472,
     "relevant_pairs": 472,
@@ -104,7 +104,7 @@
         },
         "M+E": {
           "ndcg@10": 0.9109200995167249,
-          "map": 0.779281151349461,
+          "map": 0.7792523171672907,
           "p@10": 0.89,
           "recall@100": 0.8965863997113998
         }
@@ -281,7 +281,7 @@
         },
         "M+E": {
           "ndcg@10": 0.9109200995167249,
-          "map": 0.8218003193975394,
+          "map": 0.8217826520524467,
           "p@10": 0.89,
           "recall@100": 0.971185064935065
         }
@@ -420,5 +420,11 @@
     }
   },
   "runtime_seconds": 7614.236103333009,
-  "environment": "python 3.11.0, macOS-27.0.1-arm64-arm-64bit"
+  "environment": "python 3.11.0, macOS-27.0.1-arm64-arm-64bit",
+  "evaluation_rerun": {
+    "from": "out/talentclef/scores.csv",
+    "tie_break": "descending score, then ascending document id",
+    "seconds": 0.16030512999986968,
+    "environment": "python 3.13.16, Linux-6.18.44-fc-v139-x86_64-with-glibc2.39"
+  }
 }

@@ -28,7 +28,7 @@
       "python": "3.13.16",
       "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
       "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
-      "seconds": 616.9142579819998
+      "seconds": 667.546115862
     }
   },
   "cv": {
@@ -184,6 +184,15 @@
     "Fused (v2) without M": 6,
     "Fused (v3)": 10,
     "M only (v3)": 1,
+    "L only (v3)": 1,
+    "E only (v3)": 3,
+    "Fused (v3), k=0": 2,
+    "Fused (v3), k=2.5": 7,
+    "Fused (v3), k=10": 9,
+    "Fused (v3, z-score)": 7,
+    "Fused (v3) without L": 3,
+    "Fused (v3) without E": 6,
+    "Fused (v3) without M": 6,
     "Fused (v3) + MMR λ=0.9": 10,
     "Fused (v3) + MMR λ=0.7": 8,
     "Fused (v3) + MMR λ=0.5": 5,
@@ -209,10 +218,60 @@
     "Fused (v2) without M": 0.22857308387756348,
     "Fused (v3)": 0.25274181365966797,
     "M only (v3)": 0.30356788635253906,
+    "L only (v3)": 0.2612471580505371,
+    "E only (v3)": 0.3015432357788086,
+    "Fused (v3), k=0": 0.26658856868743896,
+    "Fused (v3), k=2.5": 0.2661261558532715,
+    "Fused (v3), k=10": 0.25337857007980347,
+    "Fused (v3, z-score)": 0.2632506489753723,
+    "Fused (v3) without L": 0.30071747303009033,
+    "Fused (v3) without E": 0.24187612533569336,
+    "Fused (v3) without M": 0.22857308387756348,
     "Fused (v3) + MMR λ=0.9": 0.2527417540550232,
     "Fused (v3) + MMR λ=0.7": 0.30907589197158813,
     "Fused (v3) + MMR λ=0.5": 0.37617337703704834,
     "Fused (v3) + MMR λ=0.2": 0.6648859977722168
+  },
+  "ILD@10_random_lists": {
+    "n_lists": 10000,
+    "seed": 2026,
+    "median": 0.3382716476917267,
+    "p025": 0.2781089648604393,
+    "p975": 0.4266474172472953,
+    "share_of_random_lists_at_or_below": {
+      "original_A (reported run)": 0.8849,
+      "original_M (reported run)": 0.5861,
+      "BM25 (profile)": 0.0073,
+      "TF-IDF (profile)": 0.1545,
+      "Dense (profile)": 0.0275,
+      "M only": 0.1329,
+      "L only": 0.0048,
+      "E only": 0.1187,
+      "Fused (v2)": 0.0026,
+      "Fused (v1, pre-registered)": 0.0038,
+      "Fused (v2), k=0": 0.0136,
+      "Fused (v2), k=2.5": 0.0086,
+      "Fused (v2), k=10": 0.0026,
+      "Fused (v2, z-score)": 0.0118,
+      "Fused (v2) without L": 0.1134,
+      "Fused (v2) without E": 0.0004,
+      "Fused (v2) without M": 0.0001,
+      "Fused (v3)": 0.0026,
+      "M only (v3)": 0.1329,
+      "L only (v3)": 0.0048,
+      "E only (v3)": 0.1187,
+      "Fused (v3), k=0": 0.009,
+      "Fused (v3), k=2.5": 0.0086,
+      "Fused (v3), k=10": 0.0026,
+      "Fused (v3, z-score)": 0.0061,
+      "Fused (v3) without L": 0.1134,
+      "Fused (v3) without E": 0.0005,
+      "Fused (v3) without M": 0.0001,
+      "Fused (v3) + MMR λ=0.9": 0.0026,
+      "Fused (v3) + MMR λ=0.7": 0.1778,
+      "Fused (v3) + MMR λ=0.5": 0.8502,
+      "Fused (v3) + MMR λ=0.2": 1.0
+    }
   },
   "v3": {
     "encoder": {
@@ -237,6 +296,7 @@
       "E_v3": 2.842170943040401e-14,
       "F_v3": 1.4210854715202004e-14
     },
+    "tie_break": "descending score, then ascending listing_id",
     "plain_rankings_identical_to_stored": {
       "original_A (reported run)": true,
       "original_M (reported run)": true,
@@ -246,47 +306,42 @@
       "M only": true,
       "L only": true,
       "E only": true,
-      "Fused (v2)": false,
+      "Fused (v2)": true,
       "Fused (v1, pre-registered)": true,
-      "Fused (v2), k=0": false,
-      "Fused (v2), k=2.5": false,
-      "Fused (v2), k=10": false,
+      "Fused (v2), k=0": true,
+      "Fused (v2), k=2.5": true,
+      "Fused (v2), k=10": true,
       "Fused (v2, z-score)": true,
       "Fused (v2) without L": true,
-      "Fused (v2) without E": false,
-      "Fused (v2) without M": false,
-      "Fused (v3)": true
+      "Fused (v2) without E": true,
+      "Fused (v2) without M": true,
+      "Fused (v3)": true,
+      "M only (v3)": true
     },
-    "plain_rankings_differing_only_within_exact_ties": {
-      "Fused (v2)": 2,
-      "Fused (v2), k=0": 4,
-      "Fused (v2), k=2.5": 2,
-      "Fused (v2), k=10": 2,
-      "Fused (v2) without E": 2,
-      "Fused (v2) without M": 4
-    },
+    "plain_rankings_positions_moved_within_exact_ties": {},
+    "plain_rankings_top10_set_changed": {},
     "stored_mmr_reproduced": {
-      "Fused (v2) + MMR λ=0.9": {
-        "identical": false,
+      "Fused (v3) + MMR λ=0.9": {
+        "identical": true,
         "first_20_identical": true,
-        "first_differing_position": 323
+        "first_differing_position": null
       },
-      "Fused (v2) + MMR λ=0.7": {
-        "identical": false,
+      "Fused (v3) + MMR λ=0.7": {
+        "identical": true,
         "first_20_identical": true,
-        "first_differing_position": 323
+        "first_differing_position": null
       },
-      "Fused (v2) + MMR λ=0.5": {
-        "identical": false,
+      "Fused (v3) + MMR λ=0.5": {
+        "identical": true,
         "first_20_identical": true,
-        "first_differing_position": 323
+        "first_differing_position": null
       },
-      "Fused (v2) + MMR λ=0.2": {
-        "identical": false,
+      "Fused (v3) + MMR λ=0.2": {
+        "identical": true,
         "first_20_identical": true,
-        "first_differing_position": 331
+        "first_differing_position": null
       }
     },
-    "max_abs_diff_stored_ILD": 1.1920928955078125e-07
+    "max_abs_diff_stored_ILD": 0.0
   }
 }

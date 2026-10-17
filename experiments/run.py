@@ -154,6 +154,22 @@ def stage_sanity_esco(cfg, test=False, n_boot=1000):
 CONFIG_V3 = ROOT / "experiments" / "config_v3.yaml"
 
 
+V3_K_VARIANTS = (0, 2.5, 10)   # shrinkage variants of v3 (k/2 and 2k around the main k = 5, and none)
+
+
+def _v3_variants(df, m_u, e_u, l3, lists, idf3, cfg3, use_idf) -> None:
+    """v3 counterparts of the v2 variants: shrinkage k in V3_K_VARIANTS, z-score fusion, and the three
+    leave-one-out ablations. Adds F_v3_k=..., F_v3_zscore, F_v3_noL, F_v3_noE, F_v3_noM to df."""
+    w, norm = cfg3["fusion"]["weights"], cfg3["fusion"]["normalization"]
+    for k in V3_K_VARIANTS:
+        mk, ek = (core.shrink_to_median(x, lists, idf3, k, use_idf) for x in (m_u, e_u))
+        df[f"F_v3_k={k:g}"] = core.fuse({"M": mk, "L": l3, "E": ek}, w, norm)
+    sc = {"M": df["M_v3"], "L": l3, "E": df["E_v3"]}
+    df["F_v3_zscore"] = core.fuse(sc, w, "zscore")
+    for drop in ("L", "E", "M"):
+        df[f"F_v3_no{drop}"] = core.fuse(sc, {k: v for k, v in w.items() if k != drop}, norm)
+
+
 def _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test):
     """v3 = config_v3.yaml (v2 settings) with the encoder and tau taken from the ESCO check.
     Adds M_v3, E_v3, L_v3, F_v3 to df; returns None when config_v3.yaml does not exist."""
@@ -189,6 +205,7 @@ def _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nl
               if ch3 else 100 * (enc3.encode(df["description"].tolist(), "passage") @ q3.T).ravel())
     df["M_v3"], df["E_v3"], df["L_v3"] = m, e, l3
     df["F_v3"] = core.fuse({"M": m, "L": l3, "E": e}, cfg3["fusion"]["weights"], cfg3["fusion"]["normalization"])
+    _v3_variants(df, df["M_v3_unshrunk"], df["E_v3_unshrunk"], l3, lists, idf3, cfg3, use_idf)
     return {"encoder": s3["selected"], "same_encoder_as_v2": same_enc,
             "tau_low": s3["tau_low"], "tau_high": s3["tau_high"]}
 
@@ -283,14 +300,14 @@ def stage_score(cfg, test=False):
     main = "F_rank" if main_norm == "rank" else "F_zscore"
 
     ids = df["listing_id"].to_numpy()
-    rk = lambda col: ids[core.order(df[col])].tolist()
+    rk = lambda col: ids[core.order(df[col], ids)].tolist()
     rankings = _base_rankings(rk, k_variants)
     v3 = _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test)
     if v3 is not None:
         rankings.update(_v3_rankings(rk))
     main_col, main_label = _main_system(main, v3 is not None)
     for lam in cfg["mmr"]["lambdas"]:
-        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam)].tolist()
+        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam, ids)].tolist()
 
     env = {"python": platform.python_version(), "platform": platform.platform(),
            "encoder": enc.label, "nli": cfg["nli"]["model"], "scoring_seconds": elapsed}
@@ -327,7 +344,11 @@ def _base_rankings(rk, k_variants) -> dict:
 
 
 def _v3_rankings(rk) -> dict:
-    return {"Fused (v3)": rk("F_v3"), "M only (v3)": rk("M_v3")}
+    return {"Fused (v3)": rk("F_v3"), "M only (v3)": rk("M_v3"), "L only (v3)": rk("L_v3"),
+            "E only (v3)": rk("E_v3"),
+            **{f"Fused (v3), k={k:g}": rk(f"F_v3_k={k:g}") for k in V3_K_VARIANTS},
+            "Fused (v3, z-score)": rk("F_v3_zscore"), "Fused (v3) without L": rk("F_v3_noL"),
+            "Fused (v3) without E": rk("F_v3_noE"), "Fused (v3) without M": rk("F_v3_noM")}
 
 
 def _main_system(main_v2_col, has_v3) -> tuple:
@@ -344,8 +365,20 @@ def _score_columns(k_variants, has_v3) -> list:
             "F_rank", "F_v1", *[f"F_{n}" for n in k_variants], "F_zscore", "F_noL", "F_noE", "F_noM",
             "M_Score_Raw", "Context_Score", "R_Score_Raw", "Fair_Score"]
     if has_v3:
-        keep += ["M_v3", "E_v3", "L_v3", "F_v3", "M_v3_unshrunk", "E_v3_unshrunk"]
+        keep += ["M_v3", "E_v3", "L_v3", "F_v3", "M_v3_unshrunk", "E_v3_unshrunk",
+                 *[f"F_v3_k={k:g}" for k in V3_K_VARIANTS], "F_v3_zscore", "F_v3_noL", "F_v3_noE", "F_v3_noM"]
     return keep + ["n_skills"]
+
+
+def _ild_random(D, k, seed, observed: dict, n_lists=10_000) -> dict:
+    """Reference distribution: ILD@k of lists of k listings drawn at random without replacement, and the
+    share of random lists whose ILD is at or below that of each observed ranking."""
+    rng = np.random.default_rng(seed)
+    v = np.array([metrics.intra_list_diversity(list(rng.choice(len(D), k, replace=False)), D, k)
+                  for _ in range(n_lists)])
+    return {"n_lists": n_lists, "seed": seed, "median": float(np.median(v)),
+            "p025": float(np.percentile(v, 2.5)), "p975": float(np.percentile(v, 97.5)),
+            "share_of_random_lists_at_or_below": {n: float((v <= x).mean()) for n, x in observed.items()}}
 
 
 def build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env, cv_info,
@@ -408,7 +441,8 @@ def build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_i
             **({"v2~v3": top("Fused (v2)", "Fused (v3)"), "v1~v3": top("Fused (v1, pre-registered)", "Fused (v3)")}
                if is_v3 else {})},
         "top10_overlap_with_main": {n: len(set(r[:k]) & set(rankings[main_label][:k])) for n, r in rankings.items()},
-        f"ILD@{k}": {n: metrics.intra_list_diversity([pos_of[i] for i in r], D, k) for n, r in rankings.items()},
+        f"ILD@{k}": (ild := {n: metrics.intra_list_diversity([pos_of[i] for i in r], D, k) for n, r in rankings.items()}),
+        f"ILD@{k}_random_lists": _ild_random(D, k, cfg["seed"], ild),
     }
     if v3 is not None:
         diag["v3"] = {**v3, "top10_overlap_v2_v3": top("Fused (v2)", "Fused (v3)"),
@@ -458,27 +492,32 @@ def stage_diagnostics(cfg, test=False):
                    cfg3["fusion"]["normalization"])
     checks["max_abs_diff_recomputed_vs_stored"]["F_v3"] = float(np.abs(f3 - df["F_v3"]).max())
     df["M_v3_unshrunk"], df["E_v3_unshrunk"] = m_u, e_u
+    _v3_variants(df, m_u, e_u, df["L_v3"], lists, idf3, cfg3, use_idf)
     v3 = {"encoder": s3["selected"], "same_encoder_as_v2": s3["selected"] == sanity["selected"],
           "tau_low": s3["tau_low"], "tau_high": s3["tau_high"]}
 
-    # Plain rankings: must equal the stored ones
+    # Plain rankings, with ties broken by listing_id (core.order). Compared with the stored run, whose ties
+    # followed the row order: any difference must be confined to listings with equal scores.
     ids = df["listing_id"].to_numpy()
-    rk = lambda col: ids[core.order(df[col])].tolist()
+    rk = lambda col: ids[core.order(df[col], ids)].tolist()
     rankings = {**_base_rankings(rk, k_variants), **_v3_rankings(rk)}
     columns = {**_base_rankings(lambda col: col, k_variants), **_v3_rankings(lambda col: col)}
-    exact, tie_swaps = {}, {}
+    exact, tie_moves, top10_changed = {}, {}, {}
+    k_eval = cfg["evaluation"]["k"]
     for n in [n for n in rankings if n in stored["rankings"]]:
         new_r, old_r = rankings[n], stored["rankings"][n]
         exact[n] = new_r == old_r
-        if not exact[n]:   # the CSV round trip may break exact ties differently; allow only tied swaps
+        if not exact[n]:
             val = df.set_index("listing_id")[columns[n]]
             bad = [p for p, (x, y) in enumerate(zip(new_r, old_r)) if x != y and abs(val[x] - val[y]) > 1e-9]
             if bad or sorted(new_r) != sorted(old_r):
                 raise ValueError(f"{n}: ranking differs from the stored rankings.json at positions {bad[:5]}")
-            tie_swaps[n] = sum(x != y for x, y in zip(new_r, old_r))
-            rankings[n] = old_r   # keep the stored order of tied listings
+            tie_moves[n] = sum(x != y for x, y in zip(new_r, old_r))
+            top10_changed[n] = set(new_r[:k_eval]) != set(old_r[:k_eval])
+    checks["tie_break"] = "descending score, then ascending listing_id"
     checks["plain_rankings_identical_to_stored"] = exact
-    checks["plain_rankings_differing_only_within_exact_ties"] = tie_swaps
+    checks["plain_rankings_positions_moved_within_exact_ties"] = tie_moves
+    checks["plain_rankings_top10_set_changed"] = top10_changed
 
     # Description embeddings (the only model call) -> MMR and ILD
     t0 = time.perf_counter()
@@ -492,7 +531,7 @@ def stage_diagnostics(cfg, test=False):
     for n, r in old_mmr.items():   # stored MMR variants re-run on their own main score with the new D
         base_col = "F_v3" if n.startswith("Fused (v3)") else ("F_rank" if n.startswith("Fused (v2) ") else "F_zscore")
         lam = float(n.rsplit("=", 1)[1])
-        r_new = ids[core.mmr_order(df[base_col], D, cfg["mmr"]["k"], lam)].tolist()
+        r_new = ids[core.mmr_order(df[base_col], D, cfg["mmr"]["k"], lam, ids)].tolist()
         k_mmr = cfg["mmr"]["k"]
         checks["stored_mmr_reproduced"][n] = {
             "identical": r_new == r, f"first_{k_mmr}_identical": r_new[:k_mmr] == r[:k_mmr],
@@ -504,7 +543,7 @@ def stage_diagnostics(cfg, test=False):
         for n, v in old_diag[old_k].items() if n in stored["rankings"]))
     main_col, main_label = _main_system("F_rank" if cfg["fusion"]["normalization"] == "rank" else "F_zscore", True)
     for lam in cfg["mmr"]["lambdas"]:
-        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam)].tolist()
+        rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main_col], D, cfg["mmr"]["k"], lam, ids)].tolist()
 
     env = {**old_diag["environment"],
            "diagnostics_stage": {"python": platform.python_version(), "platform": platform.platform(),

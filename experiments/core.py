@@ -234,16 +234,34 @@ def fuse(scores: dict, weights: dict, method: str) -> np.ndarray:
     return sum(w / total * normalize(scores[k], method) for k, w in weights.items())
 
 
-def order(scores) -> np.ndarray:
-    """Positions sorted by descending score; ties broken by position (stable)."""
+def _tie_key(ids) -> np.ndarray:
+    """Secondary sort key: the identifiers as integers when all are digit strings, otherwise as strings."""
+    ids = [str(i) for i in ids]
+    if all(i.isdigit() for i in ids):
+        return np.array([int(i) for i in ids], dtype=np.int64)
+    return np.array(ids, dtype=object)
+
+
+def order(scores, ids=None) -> np.ndarray:
+    """Positions sorted by descending score. Ties are broken by ascending identifier (listing_id, or the
+    document id on TalentCLEF) when `ids` is given, so the order does not depend on the row order of the
+    input; without `ids`, ties keep their position (stable)."""
     s = np.asarray(scores, dtype=float)
-    return np.argsort(-s, kind="stable")
+    if ids is None:
+        return np.argsort(-s, kind="stable")
+    key = _tie_key(ids)
+    if key.dtype == object:
+        idx = sorted(range(len(s)), key=lambda i: (-s[i], key[i]))
+        return np.array(idx, dtype=np.int64)
+    return np.lexsort((key, -s))
 
 
-def mmr_order(scores, emb, k, lam) -> np.ndarray:
+def mmr_order(scores, emb, k, lam, ids=None) -> np.ndarray:
     """Re-select the first k positions with MMR; the rest follow the score order.
-    rel is the score min-max scaled to [0, 1]; sim is the cosine of description embeddings."""
-    base = order(scores)
+    rel is the score min-max scaled to [0, 1]; sim is the cosine of description embeddings.
+    Ties in the score order are broken as in `order`; ties in the MMR value go to the earlier listing
+    of that order."""
+    base = order(scores, ids)
     if lam >= 1.0:
         return base
     s = np.asarray(scores, dtype=float)
