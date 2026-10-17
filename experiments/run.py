@@ -313,7 +313,7 @@ def stage_score(cfg, test=False):
            "encoder": enc.label, "nli": cfg["nli"]["model"], "scoring_seconds": elapsed}
     cv_info = {"skills": len(cv_skills), "paragraphs": len(cand["paragraphs"])}
     diag = build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env, cv_info,
-                             sanity, v3, np.array(list(best_sim.values())), k_variants)
+                             sanity, v3, np.array([best_sim[s] for s in {x for l in df["skills"] for x in l}]), k_variants)
     _dump(diag, out / "diagnostics.json")
     _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")
     df.assign(n_skills=df["skills"].str.len())[_score_columns(k_variants, v3 is not None)].to_csv(
@@ -549,7 +549,7 @@ def stage_diagnostics(cfg, test=False):
            "diagnostics_stage": {"python": platform.python_version(), "platform": platform.platform(),
                                  "encoder": enc.label, "seconds": time.perf_counter() - t0}}
     diag = build_diagnostics(cfg, df, rankings, D, chunks, main_col, main_label, data_info, env,
-                             old_diag["cv"], sanity, v3, np.array(list(best_sim.values())), k_variants)
+                             old_diag["cv"], sanity, v3, np.array([best_sim[s] for s in {x for l in lists for x in l}]), k_variants)
     diag["checks"] = checks
     _dump(diag, out / "diagnostics.json")
     _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")

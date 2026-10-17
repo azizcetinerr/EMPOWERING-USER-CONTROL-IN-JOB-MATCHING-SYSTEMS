@@ -25,10 +25,10 @@
     "nli": "cross-encoder/nli-distilroberta-base",
     "scoring_seconds": 539.9640856249898,
     "diagnostics_stage": {
-      "python": "3.13.16",
-      "platform": "Linux-6.18.44-fc-v139-x86_64-with-glibc2.39",
+      "python": "3.11.0",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
       "encoder": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2 [sentence_transformers]",
-      "seconds": 667.546115862
+      "seconds": 59.65222208300838
     }
   },
   "cv": {
@@ -40,8 +40,8 @@
     "high": 0.7833597660064697,
     "source": "sanity_esco.json"
   },
-  "distinct_listing_skills": 2107,
-  "share_listing_skills_at_or_above_tau_high": 0.045087802562885616,
+  "distinct_listing_skills": 2051,
+  "share_listing_skills_at_or_above_tau_high": 0.04436860068259386,
   "share_listing_skills_at_or_below_tau_low": 0.0,
   "spread_over_listings_with_skills": {
     "M": {
@@ -199,36 +199,36 @@
     "Fused (v3) + MMR λ=0.2": 1
   },
   "ILD@10": {
-    "original_A (reported run)": 0.38300657272338867,
-    "original_M (reported run)": 0.34557580947875977,
+    "original_A (reported run)": 0.3830065131187439,
+    "original_M (reported run)": 0.345575749874115,
     "BM25 (profile)": 0.2646462917327881,
-    "TF-IDF (profile)": 0.3062223196029663,
+    "TF-IDF (profile)": 0.30622225999832153,
     "Dense (profile)": 0.27958786487579346,
-    "M only": 0.30356788635253906,
+    "M only": 0.3035678267478943,
     "L only": 0.2612471580505371,
     "E only": 0.3015432357788086,
     "Fused (v2)": 0.25274181365966797,
-    "Fused (v1, pre-registered)": 0.25772178173065186,
-    "Fused (v2), k=0": 0.2705436944961548,
+    "Fused (v1, pre-registered)": 0.2577219009399414,
+    "Fused (v2), k=0": 0.27054357528686523,
     "Fused (v2), k=2.5": 0.2661261558532715,
-    "Fused (v2), k=10": 0.2533784508705139,
+    "Fused (v2), k=10": 0.25337857007980347,
     "Fused (v2, z-score)": 0.26891160011291504,
-    "Fused (v2) without L": 0.30071741342544556,
+    "Fused (v2) without L": 0.30071747303009033,
     "Fused (v2) without E": 0.2409622073173523,
-    "Fused (v2) without M": 0.22857308387756348,
-    "Fused (v3)": 0.25274181365966797,
-    "M only (v3)": 0.30356788635253906,
+    "Fused (v2) without M": 0.22857320308685303,
+    "Fused (v3)": 0.2527417540550232,
+    "M only (v3)": 0.3035678267478943,
     "L only (v3)": 0.2612471580505371,
     "E only (v3)": 0.3015432357788086,
-    "Fused (v3), k=0": 0.26658856868743896,
+    "Fused (v3), k=0": 0.2665885090827942,
     "Fused (v3), k=2.5": 0.2661261558532715,
     "Fused (v3), k=10": 0.25337857007980347,
-    "Fused (v3, z-score)": 0.2632506489753723,
+    "Fused (v3, z-score)": 0.2632507085800171,
     "Fused (v3) without L": 0.30071747303009033,
     "Fused (v3) without E": 0.24187612533569336,
-    "Fused (v3) without M": 0.22857308387756348,
+    "Fused (v3) without M": 0.22857320308685303,
     "Fused (v3) + MMR λ=0.9": 0.2527417540550232,
-    "Fused (v3) + MMR λ=0.7": 0.30907589197158813,
+    "Fused (v3) + MMR λ=0.7": 0.3090759515762329,
     "Fused (v3) + MMR λ=0.5": 0.37617337703704834,
     "Fused (v3) + MMR λ=0.2": 0.6648859977722168
   },
@@ -236,8 +236,8 @@
     "n_lists": 10000,
     "seed": 2026,
     "median": 0.3382716476917267,
-    "p025": 0.2781089648604393,
-    "p975": 0.4266474172472953,
+    "p025": 0.27810908257961275,
+    "p975": 0.42664741873741147,
     "share_of_random_lists_at_or_below": {
       "original_A (reported run)": 0.8849,
       "original_M (reported run)": 0.5861,
@@ -292,7 +292,7 @@
   },
   "checks": {
     "max_abs_diff_recomputed_vs_stored": {
-      "M_v3": 2.842170943040401e-14,
+      "M_v3": 2.1316282072803006e-14,
       "E_v3": 2.842170943040401e-14,
       "F_v3": 1.4210854715202004e-14
     },
@@ -316,7 +316,16 @@
       "Fused (v2) without E": true,
       "Fused (v2) without M": true,
       "Fused (v3)": true,
-      "M only (v3)": true
+      "M only (v3)": true,
+      "L only (v3)": true,
+      "E only (v3)": true,
+      "Fused (v3), k=0": true,
+      "Fused (v3), k=2.5": true,
+      "Fused (v3), k=10": true,
+      "Fused (v3, z-score)": true,
+      "Fused (v3) without L": true,
+      "Fused (v3) without E": true,
+      "Fused (v3) without M": true
     },
     "plain_rankings_positions_moved_within_exact_ties": {},
     "plain_rankings_top10_set_changed": {},
@@ -342,6 +351,6 @@
         "first_differing_position": null
       }
     },
-    "max_abs_diff_stored_ILD": 0.0
+    "max_abs_diff_stored_ILD": 1.1920928955078125e-07
   }
 }

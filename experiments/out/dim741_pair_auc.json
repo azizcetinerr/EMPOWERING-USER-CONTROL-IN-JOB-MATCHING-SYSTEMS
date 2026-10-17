@@ -1,0 +1,50 @@
+{
+  "encoder": "xlm-roberta-base",
+  "backend": "hf_meanpool_nomask",
+  "removed_dimension": 741,
+  "procedure": "mean over all positions including padding, unnormalized; delete dimension; then L2-normalize and cosine",
+  "esco_full": {
+    "related_vs_unrelated": 0.627266,
+    "synonym_vs_easy": 0.724934,
+    "broader_vs_easy": 0.542969,
+    "synonym_vs_hard": 0.712464,
+    "broader_vs_hard": 0.528697
+  },
+  "esco_without_d": {
+    "related_vs_unrelated": 0.62620675,
+    "synonym_vs_easy": 0.7242259999999999,
+    "broader_vs_easy": 0.5302370000000001,
+    "synonym_vs_hard": 0.7234799999999999,
+    "broader_vs_hard": 0.526884
+  },
+  "hand_full_auc": 0.4376,
+  "hand_without_d_auc": 0.4736,
+  "checks": {
+    "esco_full_vs_sanity_esco": {
+      "related_vs_unrelated": [
+        0.627266,
+        0.62726675
+      ],
+      "synonym_vs_easy": [
+        0.724934,
+        0.7249345
+      ],
+      "broader_vs_easy": [
+        0.542969,
+        0.54297
+      ],
+      "synonym_vs_hard": [
+        0.712464,
+        0.7124634999999999
+      ],
+      "broader_vs_hard": [
+        0.528697,
+        0.528699
+      ]
+    },
+    "hand_full_vs_sanity": [
+      0.4376,
+      0.4376
+    ]
+  }
+}

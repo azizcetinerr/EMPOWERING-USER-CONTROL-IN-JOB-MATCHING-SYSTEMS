@@ -81,6 +81,8 @@ experiments/out/*
 !experiments/out/scores.csv
 !experiments/out/sanity_esco.json
 !experiments/out/anisotropy.json
+!experiments/out/idf_stats.json
+!experiments/out/dim741_pair_auc.json
 !experiments/out/talentclef/
 experiments/out/talentclef/*
 !experiments/out/talentclef/results.json
