@@ -1,0 +1,18 @@
+{
+  "esco_version": "unknown (not stated in the CSV files; latest modifiedDate 2025-12-15)",
+  "esco_files": [
+    "skills_en.csv",
+    "broaderRelationsSkillPillar_en.csv",
+    "skillsHierarchy_en.csv",
+    "skillSkillRelations_en.csv"
+  ],
+  "seed": 2026,
+  "n_per_type": 1000,
+  "counts": {
+    "synonym": 1000,
+    "broader": 1000,
+    "unrelated_hard": 1000,
+    "unrelated_easy": 1000
+  },
+  "definitions": "(each ~n pairs, fixed seed):\n  synonym         related   preferredLabel of a skill and one of its altLabels (same concept)\n  broader         related   a skill and its direct broader concept (broaderRelationsSkillPillar)\n  unrelated_easy  unrelated two skills whose top-level (Level 0) groups do not overlap\n  unrelated_hard  unrelated two skills in the same Level 1 group, >= 3 steps apart in the\n                            hierarchy and not linked in skillSkillRelations\nEvery concept URI and every label is used at most once in the whole file (no leakage)."
+}

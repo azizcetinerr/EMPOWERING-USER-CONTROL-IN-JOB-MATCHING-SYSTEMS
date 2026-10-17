@@ -90,7 +90,107 @@ def stage_sanity(cfg, test=False):
     return result
 
 
+# ----------------------------------------------------------------------------- sanity_esco
+ESCO_PAIRS = ROOT / "experiments" / "esco_pairs.csv"
+ESCO_COMPARISONS = {   # name: (positive pair types, negative pair types)
+    "related_vs_unrelated": (["synonym", "broader"], ["unrelated_easy", "unrelated_hard"]),
+    "synonym_vs_easy": (["synonym"], ["unrelated_easy"]),
+    "broader_vs_easy": (["broader"], ["unrelated_easy"]),
+    "synonym_vs_hard": (["synonym"], ["unrelated_hard"]),
+    "broader_vs_hard": (["broader"], ["unrelated_hard"]),
+}
+
+
+def _auc_with_ci(pos, neg, n_boot, rng):
+    y = np.r_[np.ones(len(pos)), np.zeros(len(neg))]
+    boots = [metrics.roc_auc(np.r_[rng.choice(pos, len(pos)), rng.choice(neg, len(neg))], y)
+             for _ in range(n_boot)]
+    return {"auc": metrics.roc_auc(np.r_[pos, neg], y),
+            "ci95": [float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))]}
+
+
+def stage_sanity_esco(cfg, test=False, n_boot=1000):
+    """Encoder check on ESCO pairs; rule fixed in advance: highest related-vs-unrelated AUC."""
+    out = _out(cfg)
+    pairs = pd.read_csv(ESCO_PAIRS)
+    meta_path = ESCO_PAIRS.with_suffix(".meta.json")
+    rows, sims = [], {}
+    for spec in _encoder_specs(cfg, test):
+        enc = make_encoder(spec, cfg["encoders"]["batch_size"], cfg["encoders"]["device"])
+        cos = (enc.encode(pairs.skill_a.tolist(), "query") * enc.encode(pairs.skill_b.tolist(), "query")).sum(1)
+        rng = np.random.default_rng(cfg["seed"])
+        by_type = {t: cos[(pairs.pair_type == t).to_numpy()] for t in pairs.pair_type.unique()}
+        comps = {name: _auc_with_ci(np.concatenate([by_type[t] for t in p]),
+                                    np.concatenate([by_type[t] for t in n]), n_boot, rng)
+                 for name, (p, n) in ESCO_COMPARISONS.items()}
+        rel, unrel = cos[pairs.related == 1], cos[pairs.related == 0]
+        rows.append({"encoder": enc.label, "name": spec["name"], "backend": spec["backend"],
+                     "comparisons": comps,
+                     "median_cosine": {t: float(np.median(v)) for t, v in by_type.items()},
+                     "related_median": float(np.median(rel)), "unrelated_median": float(np.median(unrel)),
+                     "gap": float(np.median(rel) - np.median(unrel))})
+        sims[enc.label] = cos
+        log.info(f"{enc.label}: AUC={comps['related_vs_unrelated']['auc']:.3f} "
+                 f"related={rows[-1]['related_median']:.3f} unrelated={rows[-1]['unrelated_median']:.3f}")
+    best = max(rows, key=lambda r: (r["comparisons"]["related_vs_unrelated"]["auc"], r["gap"]))
+    spec = next(s for s in _encoder_specs(cfg, test) if s["name"] == best["name"] and s["backend"] == best["backend"])
+    result = {"selected": spec,
+              "selection_rule": "highest ROC-AUC of related (synonym + broader) vs unrelated (easy + hard) ESCO pairs "
+                                "(ties: larger median gap)",
+              "tau_low": best["unrelated_median"], "tau_high": best["related_median"],
+              "tau_rule": "median cosine of the unrelated / related ESCO pairs under the selected encoder",
+              "n_bootstrap": n_boot, "pairs_file": str(ESCO_PAIRS.relative_to(ROOT)),
+              "pairs_meta": json.loads(meta_path.read_text()) if meta_path.exists() else None,
+              "n_pairs": pairs["pair_type"].value_counts().to_dict(), "encoders": rows}
+    _dump(result, out / "sanity_esco.json")
+    pd.concat([pairs, pd.DataFrame(sims)], axis=1).to_csv(out / "sanity_esco_pairs.csv", index=False)
+    log.info(f"Selected encoder (ESCO): {best['encoder']} (tau_low={best['unrelated_median']:.3f}, "
+             f"tau_high={best['related_median']:.3f})")
+    return result
+
+
 # ----------------------------------------------------------------------------- score
+CONFIG_V3 = ROOT / "experiments" / "config_v3.yaml"
+
+
+def _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test):
+    """v3 = config_v3.yaml (v2 settings) with the encoder and tau taken from the ESCO check.
+    Adds M_v3, E_v3, L_v3, F_v3 to df; returns None when config_v3.yaml does not exist."""
+    if not CONFIG_V3.exists():
+        return None
+    cfg3 = yaml.safe_load(CONFIG_V3.read_text(encoding="utf-8"))
+    s3 = json.loads((out / cfg3["encoder_selection"]["sanity_file"]).read_text())
+    df3, _ = core.load_listings({**cfg3, "paths": cfg["paths"]})
+    if not df3["listing_id"].equals(df["listing_id"]):
+        raise ValueError("v3 and v2 listings are not aligned")
+    lists = df3["skills"]
+    same_enc = s3["selected"] == sanity["selected"]
+    enc3 = enc if same_enc else make_encoder(s3["selected"], cfg3["encoders"]["batch_size"], cfg3["encoders"]["device"])
+    skills3 = {s for l in lists for s in l}
+    sim3 = best_sim if same_enc and skills3 <= set(best_sim) else core.best_skill_similarity(enc3, lists, cv_skills)
+    missing = sorted(skills3 - set(evidence))
+    ev3 = {**evidence, **core.skill_evidence(nli, missing, cand["paragraphs"], cfg3["nli"]["hypothesis"])} \
+        if missing else evidence
+    use_idf, k3 = cfg3["matching"]["idf_weighting"], cfg3["skills"].get("shrinkage_k")
+    idf3 = core.idf_weights(lists)
+    m, _ = core.matching_scores(lists, sim3, idf3, s3["tau_low"], s3["tau_high"], use_idf)
+    e = core.evidence_scores(lists, ev3, idf3, use_idf)
+    if k3 is not None:
+        m, e = (core.shrink_to_median(x, lists, idf3, k3, use_idf) for x in (m, e))
+    ch3 = cfg3["encoders"].get("passage_chunks")
+    if same_enc and ch3 == ch:
+        l3 = df["L"]
+    else:
+        q3 = enc3.encode([cand["letter"]], "query")
+        l3 = (100 * core.max_chunk_cosine(q3, enc3.encode_chunked(df["description"].tolist(), "passage",
+                                                                  ch3["tokens"], ch3["overlap"]))
+              if ch3 else 100 * (enc3.encode(df["description"].tolist(), "passage") @ q3.T).ravel())
+    df["M_v3"], df["E_v3"], df["L_v3"] = m, e, l3
+    df["F_v3"] = core.fuse({"M": m, "L": l3, "E": e}, cfg3["fusion"]["weights"], cfg3["fusion"]["normalization"])
+    return {"encoder": s3["selected"], "same_encoder_as_v2": same_enc,
+            "tau_low": s3["tau_low"], "tau_high": s3["tau_high"]}
+
+
 def stage_score(cfg, test=False):
     out = _out(cfg)
     sanity = json.loads((out / "sanity.json").read_text())
@@ -200,6 +300,9 @@ def stage_score(cfg, test=False):
         "Fused (v2) without E": rk("F_noE"),
         "Fused (v2) without M": rk("F_noM"),
     }
+    v3 = _score_v3(cfg, out, df, cv_skills, cand, enc, sanity, best_sim, evidence, nli, chunks, ch, q_letter, test)
+    if v3 is not None:
+        rankings["Fused (v3)"] = rk("F_v3")
     for lam in cfg["mmr"]["lambdas"]:
         rankings[f"{main_label} + MMR λ={lam}"] = ids[core.mmr_order(df[main], D, cfg["mmr"]["k"], lam)].tolist()
 
@@ -245,12 +348,18 @@ def stage_score(cfg, test=False):
                                     for n, r in rankings.items()},
         f"ILD@{k}": ild,
     }
+    if v3 is not None:
+        diag["v3"] = {**v3, "top10_overlap_v2_v3": len(set(rankings["Fused (v2)"][:k]) & set(rankings["Fused (v3)"][:k])),
+                      "spearman_F_v2~F_v3": float(spearmanr(df["F_rank"], df["F_v3"]).correlation),
+                      "spearman_M_v2~M_v3": float(spearmanr(df["M"], df["M_v3"]).correlation)}
     _dump(diag, out / "diagnostics.json")
     _dump({"main": main_label, "rankings": rankings}, out / "rankings.json")
     keep = ["listing_id", "link", "M", "M_unshrunk", "M_meanmax", "M_v1", "L", "L_trunc128", "L_v1",
             "E", "E_unshrunk", "E_v1", "bm25", "tfidf", "dense_profile", "dense_trunc128",
             "F_rank", "F_v1", *[f"F_{n}" for n in k_variants], "F_zscore", "F_noL", "F_noE", "F_noM",
             "M_Score_Raw", "Context_Score", "R_Score_Raw", "Fair_Score"]
+    if v3 is not None:
+        keep += ["M_v3", "E_v3", "L_v3", "F_v3"]
     df.assign(n_skills=df["skills"].str.len())[keep + ["n_skills"]].to_csv(out / "scores.csv", index=False)
     log.info(f"Scores, rankings and diagnostics written to {out} ({elapsed:.0f} s)")
     return diag
@@ -371,7 +480,7 @@ def _evaluate_gold(gold, rankings, main, k, nb, seed, scores, random_ids):
         "systems": {n: {**point[n], **ci[n], f"unjudged_in_top{k}": unjudged[n]} for n in rankings},
         "score_validity": {c: {"spearman_with_grade": float(spearmanr(S[c], g).correlation),
                                "auc_relevant(grade>=1)": metrics.roc_auc(S[c], (g >= 1).astype(int))}
-                           for c in VALIDITY_SCORES},
+                           for c in VALIDITY_SCORES + [c for c in ("M_v3", "F_v3") if c in S]},
         "random_sample_relevant_share": {
             "n": len(rnd), "share_grade>=1": float(np.mean([judged[i] >= 1 for i in rnd])) if rnd else None}}
 
@@ -449,7 +558,7 @@ def _results_md(res, main, k):
 # ----------------------------------------------------------------------------- main
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=["sanity", "score", "pool", "evaluate", "all"])
+    ap.add_argument("stage", choices=["sanity", "sanity_esco", "score", "pool", "evaluate", "all"])
     ap.add_argument("--config", default=str(Path(__file__).with_name("config.yaml")))
     ap.add_argument("--test", action="store_true", help="hashing encoder + lexical NLI (no downloads)")
     ap.add_argument("--gold", choices=list(GOLD_NAMES), default="B",

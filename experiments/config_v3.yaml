@@ -1,0 +1,101 @@
+# v3: a copy of config.yaml (v2) with one change - the encoder and the thresholds tau_low / tau_high
+# come from the ESCO encoder check (python -m experiments.run sanity_esco -> out/sanity_esco.json,
+# pairs in esco_pairs.csv) instead of the 100 hand-written pairs (skill_pairs.csv).
+# run.py scores "Fused (v3)" from the skills, shrinkage, chunking and fusion settings in this file;
+# paths, pool and evaluation are taken from config.yaml. Fixed before looking at any v3 output.
+encoder_selection:
+  source: esco
+  sanity_file: sanity_esco.json   # in out_dir; provides selected encoder, tau_low, tau_high
+
+# Configuration of the corrected-system experiments (paper revision) - v2, the main system.
+# v1 (pre-registered) is config_v1.yaml; v2 adds the language filter, the shrinkage and the
+# passage chunking, all fixed before labeling after inspecting top-10 lists (no labels).
+# Every value here is fixed BEFORE the relevance labels are collected.
+# Do not tune any value on the labels; report every variant listed below.
+
+seed: 2026
+
+paths:
+  listings: outputs/results/IP5_S_recomputed.csv   # Dec-2025 snapshot, stored skills, original scores
+  cv_text: data/candidate/cv.txt                    # full CV text (one paragraph per line)
+  skill_pairs: experiments/skill_pairs.csv          # labeled skill pairs for the encoder check
+  config_v1: experiments/config_v1.yaml             # v1 (pre-registered), scored as a separate system
+  out_dir: experiments/out
+
+candidate:
+  # Motivation letter as used in the reported run (config/config.yaml)
+  letter: >-
+    I would like to do activities and things that makes me more self-confident. I like to travel too.
+    I wanted to connect these two things together thats why I decided to become Global Volunteer of AIESEC.
+    I was working at school with kids on project Global Classroom in Iasi Romania.
+    I lived there for 2 months with people from all over the world.
+  min_paragraph_chars: 20     # a CV paragraph is a line longer than this
+
+skills:
+  # Extraction artifacts removed from the stored SkillNER output (config/config.yaml list + "www")
+  stopwords: ["com", "lo", "e", "m", "km", "www"]
+  min_length: 2
+  # SkillNER is English-only and returns function words on other languages ("los", "en", "ses").
+  # Added before labeling, after inspecting the main system's top 10; not tuned on labels.
+  # Listing language = the spaCy stopword list that covers most words of the description.
+  stopword_languages: [en, es, fr, it, de, nl, pt, pl, ro, el, hr, cs, sk, sl, hu, fi, sv, da, lt, lv, et, bg, tr, ca]
+  drop_multilingual_stopwords: true               # rule 1: drop skills that are a stopword in any listed language
+  non_english_requires_english_attestation: true  # rule 2: non-English listings keep skills also found in English listings
+  # M and E are weighted means over the listing's skills, so listings with 1-3 skills take extreme values
+  # (SD of M 22.5 vs 5.8 for 16+ skills). Both are shrunk toward the median of listings with skills:
+  # (n * score + k * median) / (n + k), n = the listing's IDF weight in units of the mean skill weight.
+  # A listing without skills gets the median (also for k = 0). k is fixed before labeling, after
+  # inspecting the top 10; k = 0, k/2 and 2k are reported as variants, unshrunk scores kept in scores.csv.
+  shrinkage_k: 5
+
+encoders:
+  # Candidates for the encoder check. The encoder with the highest ROC-AUC on the skill pairs
+  # is used for every embedding-based score (rule fixed in advance).
+  candidates:
+    - name: xlm-roberta-base
+      backend: hf_meanpool          # original encoder, padding masked
+    - name: xlm-roberta-base
+      backend: hf_meanpool_nomask   # original encoder exactly as in the reported run
+    - name: sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+      backend: sentence_transformers
+    - name: sentence-transformers/LaBSE
+      backend: sentence_transformers
+    - name: intfloat/multilingual-e5-base
+      backend: sentence_transformers
+      query_prefix: "query: "
+      passage_prefix: "passage: "
+  batch_size: 64
+  device: auto
+  # The selected encoder reads at most 128 tokens; longer descriptions are encoded in overlapping
+  # chunks (L and dense: best chunk; MMR and ILD: normalized chunk mean). The dense baseline's profile
+  # query (CV + letter) is chunked the same way and represented by its normalized chunk mean.
+  # First-128-token scores (query and description truncated) are kept as L_trunc128 / dense_trunc128.
+  passage_chunks: {tokens: 120, overlap: 20}
+
+matching:
+  # Soft coverage: c = clip((s - tau_low) / (tau_high - tau_low), 0, 1), where s is the best
+  # cosine of a listing skill to any CV skill. tau_low / tau_high are the median cosine of the
+  # unrelated / related skill pairs under the selected encoder (calibrated, not tuned on labels).
+  idf_weighting: true
+
+nli:
+  model: cross-encoder/nli-distilroberta-base
+  hypothesis: "I have the skill of {skill}."
+  batch_size: 64
+
+fusion:
+  weights: {M: 0.5, L: 0.3, E: 0.2}   # same priorities as the reported run, not tuned
+  normalization: rank                 # main variant; "zscore" is reported as a secondary variant
+
+mmr:
+  k: 20
+  lambdas: [0.9, 0.7, 0.5, 0.2]       # all reported; 1.0 = MMR off
+  main_lambda: 0.7
+
+pool:
+  depth: 10           # top-k of every system enters the judging pool
+  n_random: 40        # plus random listings (estimates the base rate of relevant listings)
+
+evaluation:
+  k: 10
+  n_bootstrap: 2000

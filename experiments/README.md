@@ -28,6 +28,11 @@ Versions of the fused ranker (both evaluated as separate systems):
   The language filter, the shrinkage and the chunking were added before labeling, after inspecting
   the top 10 of v1 and of intermediate versions.
 
+- **Fused (v3)** – `config_v3.yaml`: v2 with the encoder and tau taken from the ESCO check
+  (`python -m experiments.esco_pairs` builds `esco_pairs.csv`: 1,000 synonym, broader, easy-unrelated
+  and hard-unrelated pairs from ESCO, every concept and label used once; `python -m experiments.run
+  sanity_esco` writes `out/sanity_esco.json`). Scored only when `config_v3.yaml` exists.
+
 Systems compared: reported run (A and raw M), BM25 / TF-IDF / dense retrieval with the
 whole profile (CV + letter) as query, M, L, E alone, the fused score (v1, v2, k variants,
 z-score), three leave-one-out ablations, and MMR variants. All settings are fixed in
