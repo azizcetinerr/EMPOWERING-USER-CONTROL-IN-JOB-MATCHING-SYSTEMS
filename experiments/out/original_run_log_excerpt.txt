@@ -1,0 +1,6 @@
+Excerpt of logs/proje.log of the original (reported) run, 31 December 2025, lines 4747 and 4753.
+The full log is not released because it contains local paths and earlier runs; these two lines record the mean pairwise
+cosine of the mean skill vectors of the first five listings (0.9972) reported for fault D6.
+
+2025-12-31 23:05:09,123 - tubitak_proje - WARNING - ⚠️  Düşük Diversity Score (0.0028): Top 5 proje birbirine çok benzer (ortalama benzerlik=0.9972)
+2025-12-31 23:15:21,475 - tubitak_proje - WARNING - ⚠️  Düşük Diversity Score (0.0020): Top 5 proje birbirine çok benzer (vektör benzerlik=0.9972, hybrid diversity=0.0020)

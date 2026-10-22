@@ -61,6 +61,10 @@ python -m experiments.anisotropy        # outlier dimension of the reported run'
 python -m experiments.talentclef      # external validation (below); --from-scores re-runs only the evaluation
 python -m experiments.plot_mmr        # Figure 2 of the paper (MMR lambda sweep) from diagnostics.json
 python -m experiments.idf_stats       # distribution of the IDF skill weights (volunteering and TalentCLEF)
+python -m experiments.extra_stats     # exact sign-flip tests and Holm over 3 and 12 comparisons (Table 6)
+python -m experiments.extra_analyses postprocess   # XLM-R postprocessing on the ESCO pairs (Table 4)
+python -m experiments.extra_analyses profiles      # 472 TalentCLEF CVs as profiles; batching check of M_old
+python experiments/snapshot_compare/compare.py     # listings of the snapshot still open on 4 Feb and 18 Oct 2026
 ```
 
 All rankings break ties in the score by ascending listing identifier (on TalentCLEF: document identifier),
@@ -99,7 +103,12 @@ Tracked in git (no CV text; counts, listing identifiers and scores only):
 - `anisotropy.json` – outlier-dimension statistics of the reported run's vectors
 - `idf_stats.json` – distribution of the IDF skill weights on the snapshot and on the TalentCLEF postings
 - `talentclef/results.json`, `results.md`, `per_query.csv` – external validation
+- `talentclef/extra_stats.json` – exact randomization tests, Holm within each metric and over all twelve comparisons
+- `extra/postprocess.json` – AUC of the postprocessed XLM-R encodings on the ESCO pairs
+- `extra/profiles.json`, `extra/profiles_per_cv.csv`, `extra/talentclef_mold_batching.json` – TalentCLEF CVs as profiles
+- `rankings.json` – every ranking of the snapshot as ordered listing identifiers
+- `original_run_log_excerpt.txt` – the two log lines of the original run that record the MMR similarity of D6
 
 Not released (they contain the CV or evidence derived from it): `data/candidate/cv.txt`,
 `cv_skills_used.txt`, `skill_level_scores.csv` (per-skill CV similarity and entailment), `pool/`.
-Other outputs (`sanity.json`, `sanity_pairs.csv`, `rankings.json`) are written locally.
+Other outputs (`sanity.json`, `sanity_pairs.csv`) are written locally.

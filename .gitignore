@@ -88,3 +88,12 @@ experiments/out/talentclef/*
 !experiments/out/talentclef/results.json
 !experiments/out/talentclef/results.md
 !experiments/out/talentclef/per_query.csv
+
+# Additional analyses of the manuscript (no CV text; TalentCLEF CVs are public, CC BY 4.0)
+!experiments/out/extra/
+!experiments/out/extra/profiles_per_cv.csv
+!experiments/out/talentclef/extra_stats.json
+!experiments/out/rankings.json
+!experiments/out/original_run_log_excerpt.txt
+# Portal API response of 4 February 2026 (public listing data), input of experiments/snapshot_compare
+!outputs/api_cache.json

@@ -1,0 +1,52 @@
+{
+  "batching": "per document, consecutive batches of 32 skills (as the reported run's vectorizer)",
+  "stored_batching": "distinct skills sorted alphabetically, batches of 64",
+  "agreement_with_stored": {
+    "spearman_median": 0.7409829855778317,
+    "spearman_min": -0.0016248355856796465,
+    "max_abs_diff": 0.3791171292735811
+  },
+  "means_per_document_batching": {
+    "ndcg@10": 0.7675870402481119,
+    "map": 0.5395101868194636,
+    "p@10": 0.74,
+    "recall@100": 0.666410533910534
+  },
+  "means_stored": {
+    "ndcg@10": 0.7321131312281419,
+    "map": 0.5746640226653718,
+    "p@10": 0.7,
+    "recall@100": 0.6473133116883117
+  },
+  "comparisons_M_minus_M_old": {
+    "ndcg@10": {
+      "mean_diff": 0.11029454822241054,
+      "p_exact": 0.375,
+      "positive": 3,
+      "zero": 4
+    },
+    "map": {
+      "mean_diff": 0.232649866328499,
+      "p_exact": 0.0078125,
+      "positive": 9,
+      "zero": 0
+    },
+    "p@10": {
+      "mean_diff": 0.13999999999999999,
+      "p_exact": 0.25,
+      "positive": 4,
+      "zero": 5
+    },
+    "recall@100": {
+      "mean_diff": 0.2302840909090909,
+      "p_exact": 0.00390625,
+      "positive": 9,
+      "zero": 1
+    }
+  },
+  "environment": {
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v140-x86_64-with-glibc2.39",
+    "seed": 2026
+  }
+}

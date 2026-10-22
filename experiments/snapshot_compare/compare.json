@@ -1,0 +1,35 @@
+{
+  "dec_snapshot_listings": 939,
+  "feb": {
+    "date": "2026-02-04",
+    "open": 983,
+    "of_dec_still_open": 448
+  },
+  "oct": {
+    "date": "2026-10-18",
+    "open": 1038,
+    "api_total": 1038,
+    "of_dec_still_open": 168,
+    "new_vs_dec": 870,
+    "no_deadline_among_open": 695,
+    "no_deadline_among_dec_still_open": 145
+  },
+  "top_still_open_oct": {
+    "Fused (v3)": {
+      "top10": 2,
+      "top20": 4
+    },
+    "original_A (reported run)": {
+      "top10": 3,
+      "top20": 6
+    },
+    "BM25 (profile)": {
+      "top10": 0,
+      "top20": 1
+    },
+    "Dense (profile)": {
+      "top10": 1,
+      "top20": 3
+    }
+  }
+}

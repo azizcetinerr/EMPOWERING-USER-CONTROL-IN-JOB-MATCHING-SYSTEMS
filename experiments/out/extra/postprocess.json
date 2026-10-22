@@ -1,0 +1,142 @@
+{
+  "n_pairs": 4000,
+  "n_distinct_phrases": 8000,
+  "cross_fitted_two_folds": {
+    "standardized": {
+      "auc_related_vs_unrelated": 0.79883725,
+      "ci95": [
+        0.78631465625,
+        0.8119573062500001
+      ],
+      "broader_vs_hard": 0.6866669999999999
+    },
+    "all_but_the_top_D7": {
+      "auc_related_vs_unrelated": 0.93006575,
+      "ci95": [
+        0.9219718625,
+        0.9378043250000001
+      ],
+      "broader_vs_hard": 0.8519760000000001
+    },
+    "whitening_k256": {
+      "auc_related_vs_unrelated": 0.9300174999999999,
+      "ci95": [
+        0.921540375,
+        0.9378274062499999
+      ],
+      "broader_vs_hard": 0.8609140000000001
+    }
+  },
+  "statistics_estimated_on": "the encoded ESCO phrases (no labels)",
+  "variants": {
+    "raw": {
+      "auc_related_vs_unrelated": 0.62726925,
+      "ci95": [
+        0.6101347375,
+        0.6446328125
+      ],
+      "median_cosine_related": 0.9959062507940427,
+      "median_cosine_unrelated": 0.9912250581149156,
+      "synonym_vs_easy": 0.72494,
+      "synonym_vs_hard": 0.7124630000000001,
+      "broader_vs_easy": 0.542972,
+      "broader_vs_hard": 0.528702
+    },
+    "without_dim_741": {
+      "auc_related_vs_unrelated": 0.6262085,
+      "ci95": [
+        0.6090355,
+        0.64356210625
+      ],
+      "median_cosine_related": 0.8825821810565933,
+      "median_cosine_unrelated": 0.7974006440602786,
+      "synonym_vs_easy": 0.724229,
+      "synonym_vs_hard": 0.7234769999999999,
+      "broader_vs_easy": 0.530239,
+      "broader_vs_hard": 0.526889
+    },
+    "standardized": {
+      "auc_related_vs_unrelated": 0.79880175,
+      "ci95": [
+        0.7861925312500001,
+        0.811932225
+      ],
+      "median_cosine_related": 0.4165494402427393,
+      "median_cosine_unrelated": 0.007835101419946297,
+      "synonym_vs_easy": 0.899459,
+      "synonym_vs_hard": 0.8776410000000001,
+      "broader_vs_easy": 0.731358,
+      "broader_vs_hard": 0.686749
+    },
+    "all_but_the_top_D1": {
+      "auc_related_vs_unrelated": 0.7987385,
+      "ci95": [
+        0.7854287687500001,
+        0.8133194625000001
+      ],
+      "median_cosine_related": 0.44278080338972653,
+      "median_cosine_unrelated": 0.03403678728171963,
+      "synonym_vs_easy": 0.9202980000000001,
+      "synonym_vs_hard": 0.8927939999999999,
+      "broader_vs_easy": 0.719397,
+      "broader_vs_hard": 0.6624650000000001
+    },
+    "all_but_the_top_D2": {
+      "auc_related_vs_unrelated": 0.8808819999999999,
+      "ci95": [
+        0.8703264375,
+        0.89106426875
+      ],
+      "median_cosine_related": 0.41961327358383355,
+      "median_cosine_unrelated": 0.009499445143409436,
+      "synonym_vs_easy": 0.971776,
+      "synonym_vs_hard": 0.9545949999999999,
+      "broader_vs_easy": 0.8264319999999998,
+      "broader_vs_hard": 0.770725
+    },
+    "all_but_the_top_D7": {
+      "auc_related_vs_unrelated": 0.9298297499999999,
+      "ci95": [
+        0.92154416875,
+        0.9377958312499999
+      ],
+      "median_cosine_related": 0.4179058660578572,
+      "median_cosine_unrelated": -0.001473928852580925,
+      "synonym_vs_easy": 0.986716,
+      "synonym_vs_hard": 0.9759940000000001,
+      "broader_vs_easy": 0.9041859999999999,
+      "broader_vs_hard": 0.8524229999999999
+    },
+    "whitening": {
+      "auc_related_vs_unrelated": 0.9101212500000001,
+      "ci95": [
+        0.900352175,
+        0.91965103125
+      ],
+      "median_cosine_related": 0.2148380441106626,
+      "median_cosine_unrelated": -0.0006498048018776827,
+      "synonym_vs_easy": 0.9835130000000001,
+      "synonym_vs_hard": 0.978694,
+      "broader_vs_easy": 0.850853,
+      "broader_vs_hard": 0.8274250000000001
+    },
+    "whitening_k256": {
+      "auc_related_vs_unrelated": 0.9310262499999999,
+      "ci95": [
+        0.92269160625,
+        0.9392385999999999
+      ],
+      "median_cosine_related": 0.36131104608251036,
+      "median_cosine_unrelated": -0.0018256632453001048,
+      "synonym_vs_easy": 0.9862780000000001,
+      "synonym_vs_hard": 0.9804369999999999,
+      "broader_vs_easy": 0.894114,
+      "broader_vs_hard": 0.8632759999999999
+    }
+  },
+  "environment": {
+    "python": "3.13.16",
+    "platform": "Linux-6.18.44-fc-v140-x86_64-with-glibc2.39",
+    "seed": 2026
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "n_queries": 10,
+  "n_sign_patterns": 1024,
+  "comparisons": {
+    "ndcg@10 | M vs BM25": {
+      "p_random_10000": 0.6233376662333766,
+      "p_exact": 0.625,
+      "p_holm_within_metric_random": 1.0,
+      "p_holm_within_metric_exact": 1.0,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "ndcg@10 | M vs Dense": {
+      "p_random_10000": 0.43485651434856515,
+      "p_exact": 0.4375,
+      "p_holm_within_metric_random": 1.0,
+      "p_holm_within_metric_exact": 1.0,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "ndcg@10 | M vs M_old": {
+      "p_random_10000": 0.3484651534846515,
+      "p_exact": 0.34375,
+      "p_holm_within_metric_random": 1.0,
+      "p_holm_within_metric_exact": 1.0,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "map | M vs BM25": {
+      "p_random_10000": 0.0086991300869913,
+      "p_exact": 0.0078125,
+      "p_holm_within_metric_random": 0.0260973902609739,
+      "p_holm_within_metric_exact": 0.0234375,
+      "p_holm_12_random": 0.09569043095690431,
+      "p_holm_12_exact": 0.0859375
+    },
+    "map | M vs Dense": {
+      "p_random_10000": 0.9631036896310369,
+      "p_exact": 0.96484375,
+      "p_holm_within_metric_random": 0.9631036896310369,
+      "p_holm_within_metric_exact": 0.96484375,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "map | M vs M_old": {
+      "p_random_10000": 0.035896410358964105,
+      "p_exact": 0.03515625,
+      "p_holm_within_metric_random": 0.07179282071792821,
+      "p_holm_within_metric_exact": 0.0703125,
+      "p_holm_12_random": 0.32306769323067697,
+      "p_holm_12_exact": 0.31640625
+    },
+    "p@10 | M vs BM25": {
+      "p_random_10000": 1.0,
+      "p_exact": 1.0,
+      "p_holm_within_metric_random": 1.0,
+      "p_holm_within_metric_exact": 1.0,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "p@10 | M vs Dense": {
+      "p_random_10000": 0.37506249375062495,
+      "p_exact": 0.375,
+      "p_holm_within_metric_random": 0.7501249875012499,
+      "p_holm_within_metric_exact": 0.75,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "p@10 | M vs M_old": {
+      "p_random_10000": 0.1255874412558744,
+      "p_exact": 0.125,
+      "p_holm_within_metric_random": 0.3767623237676232,
+      "p_holm_within_metric_exact": 0.375,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "recall@100 | M vs BM25": {
+      "p_random_10000": 0.017198280171982803,
+      "p_exact": 0.015625,
+      "p_holm_within_metric_random": 0.034396560343965606,
+      "p_holm_within_metric_exact": 0.03125,
+      "p_holm_12_random": 0.17198280171982802,
+      "p_holm_12_exact": 0.15625
+    },
+    "recall@100 | M vs Dense": {
+      "p_random_10000": 0.8305169483051695,
+      "p_exact": 0.828125,
+      "p_holm_within_metric_random": 0.8305169483051695,
+      "p_holm_within_metric_exact": 0.828125,
+      "p_holm_12_random": 1.0,
+      "p_holm_12_exact": 1.0
+    },
+    "recall@100 | M vs M_old": {
+      "p_random_10000": 0.0053994600539946005,
+      "p_exact": 0.00390625,
+      "p_holm_within_metric_random": 0.0161983801619838,
+      "p_holm_within_metric_exact": 0.01171875,
+      "p_holm_12_random": 0.0647935206479352,
+      "p_holm_12_exact": 0.046875
+    }
+  }
+}
