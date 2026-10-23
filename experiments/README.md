@@ -45,7 +45,7 @@ All three are scored as separate systems; v1 and v2 are kept as version history.
   diagnostics refer to v3.
 
 Code and configurations are frozen by the git tags `pre-labeling` (v1, v2) and `esco-talentclef`
-(v3, TalentCLEF). The tag name `pre-labeling` predates the decision not to collect labels.
+(v3, TalentCLEF). The complete release behind the manuscript is frozen by `expert-systems-2026`. The tag name `pre-labeling` predates the decision not to collect labels.
 
 ## Run (from the project root)
 

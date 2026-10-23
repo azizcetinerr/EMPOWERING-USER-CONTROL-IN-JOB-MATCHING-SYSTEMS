@@ -97,3 +97,12 @@ experiments/out/talentclef/*
 !experiments/out/original_run_log_excerpt.txt
 # Portal API response of 4 February 2026 (public listing data), input of experiments/snapshot_compare
 !outputs/api_cache.json
+
+# Not part of the paper release. The web interface for a planned multi-user study and its deployment files
+# are kept on the branch `web-interface`; no data from other users have been collected.
+web_public/
+Procfile
+runtime.txt
+WEB_MIGRATION.md
+# Manuscript sources are not distributed with the code
+WileyDesign/
